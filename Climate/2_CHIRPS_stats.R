@@ -16,8 +16,6 @@ n_cpus <- 25
 cl  <- makeCluster(n_cpus)
 registerDoParallel(cl)
 
-iso_key <- read.csv(file.path(prefix, "Global", "ISO_Codes.csv"))
-
 product <- 'v1p8chirps'
 
 # For monthly data:
