@@ -28,9 +28,3 @@ if (Sys.info()[4] == 'CI-TEAM') {
 } else {
     n_cpus <- 3
 }
-
-# Load the DEM extents needed for the auto_setup_dem function
-dem_path <- file.path(prefix, 'CGIAR_SRTM')
-load(file.path(dem_path, 'dem_extents.RData'))
-dem_extents$filename <- gsub('H:\\\\Data\\\\CGIAR_SRTM', file.path(dem_path, 'Tiles'), dem_extents$filename)
-dem_extents$filename <- gsub('\\\\', '/', dem_extents$filename)
