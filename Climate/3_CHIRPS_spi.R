@@ -2,12 +2,16 @@
 # Calculates SPI for GRP countries.
 ###############################################################################
 
+source('../0_settings.R')
+
 library(raster)
 library(SPEI)
 library(foreach)
 library(doParallel)
 
 n_cpus <- 25
+
+ISO_2s <- c("ET", "DJ", "SO", "ER")
 
 cl  <- makeCluster(n_cpus)
 registerDoParallel(cl)
