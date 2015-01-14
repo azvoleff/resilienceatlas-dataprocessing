@@ -61,11 +61,7 @@ for (ISO_2 in ISO_2s) {
     chirps_tif_masked <- file.path(out_folder,
                             paste0(filename_base, date_limits_string, 
                                    '_NAs_masked.tif'))
-
-    chirps_file_masked <- file.path(in_folder,
-                          paste0(product, '_', dataset, '_VitalSigns_', 
-                                 date_limits_string, '_NAsmasked.tif'))
-    chirps <- brick(chirps_file_masked)
+    chirps <- brick(chirps_tif_masked)
     chirps_layers_in_cols <- t(as.matrix(chirps))
 
     for (spi_period in spi_periods) {
