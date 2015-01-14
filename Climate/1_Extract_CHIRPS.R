@@ -74,7 +74,7 @@ for (ISO_2 in ISO_2s) {
     # Crop bils for this site
     gdalwarp(vrt_file, chirps_tif, s_srs=s_srs, t_srs=s_srs, te=te, 
              multi=TRUE, wo=paste0("NUM_THREADS=", n_cpus), 
-             overwrite=TRUE)
+             overwrite=TRUE, ot="Int16")
 
 
     chirps <- brick(chirps_tif)
@@ -89,5 +89,6 @@ for (ISO_2 in ISO_2s) {
                             paste0(ISO_2, '_', product, '_', dataset, '_', 
                                    datestrings[1], '-', 
                                    datestrings[length(datestrings)], '_NAs_masked.tif'))
-    chirps <- writeRaster(chirps, chirps_tif_masked, overwrite=TRUE)
+    chirps <- writeRaster(chirps, chirps_tif_masked, overwrite=TRUE, 
+                          datatype="INT2S")
 }
