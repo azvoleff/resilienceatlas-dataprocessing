@@ -11,7 +11,7 @@ library(dplyr)
 library(foreach)
 library(doParallel)
 
-n_cpus <- 25
+n_cpus <- 4
 
 cl  <- makeCluster(n_cpus)
 registerDoParallel(cl)
