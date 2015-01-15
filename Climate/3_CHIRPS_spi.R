@@ -9,7 +9,7 @@ library(SPEI)
 library(foreach)
 library(doParallel)
 
-n_cpus <- 25
+n_cpus <- 20
 
 ISO_2s <- c("ET", "DJ", "SO", "ER")
 
@@ -26,11 +26,10 @@ date_limits_string <- '198101-201404'
 
 stopifnot(dataset == "monthly")
 
-spi_periods <- c(24, 36)
-spi_periods <- c(24)
+spi_periods <- c(24, 36, 12)
 
 # Define function to calculate SPI
-calc_spi <- function(chirps_mat, spi_period, filename_base, out_rast) {
+calc_spi <- function(chirps_mat, spi_period) {
     # Split the chirps_mat into pieces to minimize the number of calls to the
     # spi function
     start_n <- floor(seq(1, ncol(chirps_mat),
@@ -39,17 +38,12 @@ calc_spi <- function(chirps_mat, spi_period, filename_base, out_rast) {
     start_n <- start_n[1:(length(start_n) - 1)]
     end_n <- end_n - 1
     end_n[length(end_n)] <- end_n[length(end_n)] + 1
-
     spi_mat <- foreach(start_n=start_n, end_n=end_n,
                        .combine=cbind, .packages=c("SPEI")) %dopar% {
-        spi(chirps_mat[, start_n:end_n], spi_period, na.rm=TRUE)$fitted
+        # Multiply by 1000 and round so results can be stored as INT2S
+        round(spi(chirps_mat[, start_n:end_n], spi_period, na.rm=TRUE)$fitted * 1000)
     }
-
-    out_rast <- setValues(out_rast, t(spi_mat))
-    spi_filename <- file.path(out_folder,
-                              paste0(filename_base, 'SPI_', 
-                                     spi_period, '.tif'))
-    writeRaster(out_rast, spi_filename, overwrite=TRUE)
+    return(spi_mat)
 }
 
 for (ISO_2 in ISO_2s) {
@@ -65,8 +59,14 @@ for (ISO_2 in ISO_2s) {
     chirps_layers_in_cols <- t(as.matrix(chirps))
 
     for (spi_period in spi_periods) {
+        spi_mat <- calc_spi(chirps_layers_in_cols, spi_period)
         out_rast <- brick(chirps, values=FALSE, nl=nlayers(chirps))
-        calc_spi(chirps_layers_in_cols, spi_period, filename_base, out_rast)
+        out_rast <- setValues(out_rast, t(spi_mat))
+        spi_filename <- file.path(out_folder,
+                                  paste0(filename_base, 'SPI_', 
+                                         spi_period, '.tif'))
+        out_rast <- writeRaster(out_rast, spi_filename, overwrite=TRUE,
+                                datatype="INT2S")
     }
 }
 
