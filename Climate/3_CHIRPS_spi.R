@@ -26,10 +26,11 @@ date_limits_string <- '198101-201404'
 
 stopifnot(dataset == "monthly")
 
-spi_lengths <- c(24, 36)
+spi_periods <- c(24, 36)
+spi_periods <- c(24)
 
 # Define function to calculate SPI
-calc_spi <- function(chirps_mat, spi_period, filename_base) {
+calc_spi <- function(chirps_mat, spi_period, filename_base, out_rast) {
     # Split the chirps_mat into pieces to minimize the number of calls to the
     # spi function
     start_n <- floor(seq(1, ncol(chirps_mat),
@@ -44,12 +45,11 @@ calc_spi <- function(chirps_mat, spi_period, filename_base) {
         spi(chirps_mat[, start_n:end_n], spi_period, na.rm=TRUE)$fitted
     }
 
-    spi_rast <- brick(chirps, values=FALSE, nl=nlayers(chirps))
-    spi_rast <- setValues(spi_rast, t(spi_mat))
+    out_rast <- setValues(out_rast, t(spi_mat))
     spi_filename <- file.path(out_folder,
                               paste0(filename_base, 'SPI_', 
                                      spi_period, '.tif'))
-    writeRaster(spi_rast, spi_filename, overwrite=TRUE)
+    writeRaster(out_rast, spi_filename, overwrite=TRUE)
 }
 
 for (ISO_2 in ISO_2s) {
@@ -65,7 +65,8 @@ for (ISO_2 in ISO_2s) {
     chirps_layers_in_cols <- t(as.matrix(chirps))
 
     for (spi_period in spi_periods) {
-        calc_spi(chirps_layers_in_cols, spi_period, filename_base)
+        out_rast <- brick(chirps, values=FALSE, nl=nlayers(chirps))
+        calc_spi(chirps_layers_in_cols, spi_period, filename_base, out_rast)
     }
 }
 
