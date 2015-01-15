@@ -16,7 +16,8 @@ library(doParallel)
 # Setup parameters
 ###############################################################################
 
-ISO_2s <- c("ET", "DJ", "SO", "ER")
+ISO_2s <- c("ET")
+ISO_2s <- c("ET", "DJ", "ER", "SO")
 
 buffer_aoi <- FALSE
 
@@ -32,7 +33,7 @@ stopifnot(file_test("-d", shp_folder))
 stopifnot(file_test('-d', output_folder))
 stopifnot(file_test('-d', data_folder))
 
-iso_key <- read.csv(file.path(prefix, "Global", "ISO_Codes.csv"))
+iso_key <- read.csv("../ISO_Codes.csv")
 
 # Setup possible locations for temp files
 temps <- c('H:/Temp', # Buffalo drive
@@ -55,7 +56,6 @@ for (forest_threshold in forest_thresholds) {
     this_output_folder <- file.path(output_folder,
                                paste0(gsub('_', '', utm_string), '_', 
                                       forest_threshold, 'pct'))
-    this_output_folder <- file.path(prefix, this_output_folder)
     if (!file_test('-d', this_output_folder)) {
         print(paste(this_output_folder, 'does not exist - creating it'))
         dir.create(this_output_folder)
@@ -69,12 +69,8 @@ for (forest_threshold in forest_thresholds) {
 cl <- makeCluster(n_cpus)
 registerDoParallel(cl)
 
-aois <- c()
-for (ISO_2 in ISO_2s) {
-    timestamp()
+aois <- foreach (ISO_2=ISO_2s, .combine=c) %do% {
     ISO_3 <- as.character(iso_key$ISO_3[match(ISO_2, iso_key$ISO_2)])
-
-    message('Processing ', ISO_3, '...')
 
     aoi <- readOGR(shp_folder, paste0(ISO_3, '_adm0'))
     stopifnot(length(aoi) == 1)
@@ -87,8 +83,9 @@ for (ISO_2 in ISO_2s) {
     aoi$label <- "National boundary"
     aoi <- as(aoi, 'SpatialPolygonsDataFrame')
     aoi <- aoi[, names(aoi) == 'label']
+    aoi <- list(aoi)
     names(aoi) <- ISO_2
-    aois <- c(aois, aoi)
+    return(aoi)
 }
 
 message('Starting gfcanalysis processing.')
