@@ -33,7 +33,7 @@ calc_spi <- function(chirps_mat, spi_period) {
     # Split the chirps_mat into pieces to minimize the number of calls to the
     # spi function
     start_n <- floor(seq(1, ncol(chirps_mat),
-                         length.out=min(ncol(chirps_mat), n_cpus)))
+                         length.out=min(ncol(chirps_mat), n_cpus + 1)))
     end_n <- start_n[2:length(start_n)]
     start_n <- start_n[1:(length(start_n) - 1)]
     end_n <- end_n - 1
@@ -56,10 +56,10 @@ for (ISO_2 in ISO_2s) {
                             paste0(filename_base, date_limits_string, 
                                    '_NAs_masked.tif'))
     chirps <- brick(chirps_tif_masked)
-    chirps_layers_in_cols <- t(as.matrix(chirps))
+    chirps_mat <- t(as.matrix(chirps))
 
     for (spi_period in spi_periods) {
-        spi_mat <- calc_spi(chirps_layers_in_cols, spi_period)
+        spi_mat <- calc_spi(chirps_mat, spi_period)
         out_rast <- brick(chirps, values=FALSE, nl=nlayers(chirps))
         out_rast <- setValues(out_rast, t(spi_mat))
         spi_filename <- file.path(out_folder,
