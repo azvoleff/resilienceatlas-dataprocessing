@@ -68,10 +68,10 @@ sect5_pp_w1 <- clear.labels(sect5_pp_w1)
 sect5_pp_w1 <- tbl_df(sect5_pp_w1)
 
 # Load post-planting data section 7 - data on holder (use of extension, etc)
-sect7_ph_w1 <- read.spss(file.path(prefix, "GRP/LSMS/ET/2011/sect7_pp_w1.sav"), 
+sect7_pp_w1 <- read.spss(file.path(prefix, "GRP/LSMS/ET/2011/sect7_pp_w1.sav"), 
                  to.data.frame=TRUE)
-sect7_ph_w1 <- clear.labels(sect7_ph_w1)
-sect7_ph_w1 <- tbl_df(sect7_ph_w1)
+sect7_pp_w1 <- clear.labels(sect7_pp_w1)
+sect7_pp_w1 <- tbl_df(sect7_pp_w1)
 
 # Load post harvest data section 9 - data on harvest by field
 sect9_ph_w1 <- read.spss(file.path(prefix, "GRP/LSMS/ET/2011/sect9_ph_w1.sav"), 
@@ -259,7 +259,7 @@ yield <- left_join(yield, sect5_pp_w1)
 dim(yield)
 
 # Add in the data on holder (use of extension, etc.)
-yield <- left_join(yield, sect7_ph_w1)
+yield <- left_join(yield, sect7_pp_w1)
 dim(yield)
 
 table(yield$pp_s4q09)
