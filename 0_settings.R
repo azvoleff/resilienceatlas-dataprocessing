@@ -2,7 +2,8 @@ PLOT_WIDTH <- 6.5
 PLOT_HEIGHT <- 6.5
 PLOT_DPI <- 300
 
-prefixes <- c('D:/azvoleff/Data', # CI-TEAM
+prefixes <- c('C:/Data', # HP current work
+              'D:/azvoleff/Data', # CI-TEAM
               'H:/Data', # Buffalo drive
               'O:/Data', # Blue drive
               '/localdisk/home/azvoleff/Data') # vertica1
@@ -10,7 +11,8 @@ prefix <- prefixes[match(TRUE, unlist(lapply(prefixes, function(x) file_test('-d
 
 geogs <- read.csv(file.path(prefix, 'GRP', 'GRP_Countries.csv'))
 
-temps <- c('H:/Temp', # Buffalo drive
+temps <- c('C:/Temp', # Local
+           'H:/Temp', # Buffalo drive
            'O:/Temp', # Blue drive (HP or thinkpad)
            '/localdisk/home/azvoleff/Temp', # vertica1
            'D:/Temp') # CI-TEAM
