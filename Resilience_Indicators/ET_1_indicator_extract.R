@@ -3,6 +3,10 @@
 # Process Ethiopia LSMS data
 ###############################################################################
 ###############################################################################
+###
+### TODO: Instead of aggregating at the EA level, need to aggregate at the 
+### lowest level at which sample estimates are representative - based on the 
+### data book
 
 source('../0_settings.R')
 
@@ -266,7 +270,7 @@ names(inputs)[names(inputs) == "holder_id"] <- "individual_id"
 inputs$hldr_crop_rotation <- sect7_pp_w1$pp_s7q01 == "Yes"
 table(inputs$hldr_crop_rotation, useNA="always")
 
-inputs$hldr_chem_fert <- sect7_pp_w1$pp_s7q01 == "Yes"
+inputs$hldr_chem_fert <- sect7_pp_w1$pp_s7q02 == "Yes"
 table(inputs$hldr_chem_fert, useNA="always")
 
 inputs$hldr_ext <- sect7_pp_w1$pp_s7q04 == "Yes"
@@ -386,21 +390,72 @@ com <- full_join(com, com_ag)
 
 cats <- c("None", "Very low", "Low", "Average", "High", "Very high")
 # Choose quantiles
-qs <- seq(0, 1, .2)
+qs <- c(0, .333, .666, 1)
 
-quantile(probs, 
+rev_index <- function(x) {
+    max(x) + 1 - x
+}
 
+calc_score <- function(x, name) {
+    raw_score <- apply(select(x, -ea_id), 1, sum)
+    score <- raw_score / max(raw_score) * 10
+    score <- data.frame(x$ea_id, score)
+    names(score) <- c("ea_id", name)
+    score
+}
+
+##########################
 # Buffer capacity
-group_by(indiv, ea_id) %>%
-    summarize(pct_job_perm_any=sum(job_perm_any, na.rm=TRUE)/sum(!is.na(job_perm_any))*100,
-              pct_edu_gt8=sum(edu > "5-8", na.rm=TRUE)/sum(!is.na(edu))*100)
+buff_indiv_stats <- group_by(indiv, ea_id, household_id) %>%
+    summarize(job_perm_any=sum(job_perm_any, na.rm=TRUE) > 1,
+              edu_gt8=sum(edu > "5-8", na.rm=TRUE)/sum(!is.na(edu))) %>%
+    group_by(ea_id) %>%
+    summarize(job_perm_any=mean(job_perm_any, na.rm=TRUE),
+              edu_gt8=mean(edu_gt8, na.rm=TRUE))
 
-group_by(hh, ea_id) %>%
+buff_hh_stats <- group_by(hh, ea_id) %>%
     summarize(mean_resid_duration=mean(resid_duration, na.rm=TRUE),
-              mean_dep_ratio=mean(dep_ratio
+              mean_dep_ratio=mean(dep_ratio, na.rm=TRUE),
+              mean_hh_size=mean(hh_size))
 
+buff_stats <- full_join(buff_indiv_stats, buff_hh_stats)
+
+# Delete NAs in last row. TODO: why are they there??
+buff_stats <- buff_stats[-nrow(buff_stats), ]
+
+buff_quants <- ungroup(buff_stats) %>%
+    select(-job_perm_any) %>%
+    mutate_each(funs(as.integer(cut(., quantile(., c(0, .33, .666, 1), na.rm=TRUE),
+                                    include.lowest=TRUE))), -ea_id)
+
+# Reverse the order of mean_dep_ratio - higher is less resilient
+buff_quants$mean_dep_ratio <- rev_index(buff_quants$mean_dep_ratio)
+
+buff_score <- calc_score(buff_quants, 'buff_score')
+
+##########################
 # Self-organization
 
+# Farm inputs
+buff_input_stats <- group_by(indiv, ea_id, household_id) %>%
+    summarize(crop_rotation=sum(hldr_crop_rotation, na.rm=TRUE)/sum(!is.na(hldr_crop_rotation)),
+              chem_fert=sum(hldr_chem_fert, na.rm=TRUE)/sum(!is.na(hldr_chem_fert)),
+              ext=sum(hldr_ext, na.rm=TRUE)/sum(!is.na(hldr_ext)),
+              svc_credit=sum(hldr_svc_credit, na.rm=TRUE)/sum(!is.na(hldr_svc_credit)),
+              svc_advisory=sum(hldr_svc_advisory, na.rm=TRUE)/sum(!is.na(hldr_svc_advisory)))
+
+# Labor exchange
+job_stats <- group_by(job_data, household_id) %>%
+    summarize(labor_exchange=sum(hldr_labor_exchange, na.rm=TRUE)/sum(!is.na(hldr_labor_exchange)))
+
+
+# Microenterprise
+
+
+# Distance to resources/services
+
+
+##########################
 # Capacity for learning
 
 ###############################################################################
