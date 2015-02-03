@@ -35,7 +35,7 @@ stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
 stopifnot(file_test('-d', shp_folder))
 
-iso_key <- read.csv(file.path(prefix, "Global", "ISO_Codes.csv"))
+iso_key <- read.csv(file.path('..', "ISO_Codes.csv"))
 
 yrs <- seq(year(chirps_start_date), year(chirps_end_date))
 dates <- seq(chirps_start_date, chirps_end_date, by='months')
@@ -116,6 +116,10 @@ foreach (ISO_2=ISO_2s,
                                matrix(filter(annual_ppt_lm_coefs, coef == "year")$estimate, 
                                       nrow=nrow(chirps)*ncol(chirps), 
                                       ncol=1, byrow=TRUE))
+    writeRaster(annual_ppt_slope_rast,
+                filename=file.path(out_folder, paste0(filename_base, 
+                                                      'annual_ppt_slope.tif')), 
+                overwrite=TRUE, datatype="FLT4S")
 
     annual_ppt_p_val_rast <- brick(chirps, values=FALSE, nl=1)
     annual_ppt_p_val_rast <- setValues(annual_ppt_p_val_rast,
@@ -123,13 +127,16 @@ foreach (ISO_2=ISO_2s,
                                       nrow=nrow(chirps)*ncol(chirps), 
                                       ncol=1, byrow=TRUE))
 
-    annual_ppt_slope_rast <- annual_ppt_slope_rast * (annual_ppt_p_val_rast < .05)
-
-    writeRaster(annual_ppt_slope_rast,
+    writeRaster(annual_ppt_p_val_rast,
                 filename=file.path(out_folder, paste0(filename_base, 
-                                                      'annual_ppt_slope_rast.tif')), 
-                overwrite=TRUE)
+                                                      'annual_ppt_pval.tif')), 
+                overwrite=TRUE, datatype="FLT4S")
 
-    raster(""ETH_CNTM_2010-2010.tif"
-
+    annual_ppt_slope_rast <- overlay(annual_ppt_slope_rast, annual_ppt_p_val_rast,
+        fun=function(slp, p) {
+            return(slp * (p < .05))
+        }
+        filename=file.path(out_folder, paste0(filename_base, 
+                                              'annual_ppt_slope_masked.tif')),
+        datatype="FLT4S")
 }

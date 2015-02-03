@@ -11,6 +11,13 @@ library(stringr)
 library(gdalUtils)
 library(rgeos)
 library(teamlucc)
+library(foreach)
+library(doParallel)
+
+n_cpus <- 3
+
+cl  <- makeCluster(n_cpus)
+registerDoParallel(cl)
 
 #dataset <- 'pentad'
 dataset <- 'monthly'
@@ -50,7 +57,9 @@ s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
 
 region_polygons <- readOGR(shp_folder, 'GRP_regions')
 
-for (n in 1:nrow(region_polygons) {
+foreach (n=c(2:nrow(region_polygons)), .inorder=FALSE,
+         .packages=c('raster', 'teamlucc', 'rgeos', 'gdalUtils',
+                     'rgdal')) %dopar% {
     timestamp()
 
     aoi <- region_polygons[n, ]
@@ -75,15 +84,12 @@ for (n in 1:nrow(region_polygons) {
     chirps <- brick(chirps_tif)
 
     chirps_NA_value <- -9999
-    chirps <- calc(chirps, function(vals) {
-        vals[vals == chirps_NA_value] <- NA
-        return(vals)
-    })
-    # chirps <- mask(chirps, aoi)
     chirps_tif_masked <- file.path(out_folder,
-                            paste0(ISO_2, '_', product, '_', dataset, '_', 
+                            paste0(region, '_', product, '_', dataset, '_', 
                                    datestrings[1], '-', 
                                    datestrings[length(datestrings)], '_NAs_masked.tif'))
-    chirps <- writeRaster(chirps, chirps_tif_masked, overwrite=TRUE, 
-                          datatype="INT2S")
+    chirps <- calc(chirps, function(vals) {
+            vals[vals == chirps_NA_value] <- NA
+            return(vals)
+        }, filename=chirps_tif_masked, overwrite=TRUE, datatype="INT2S")
 }
