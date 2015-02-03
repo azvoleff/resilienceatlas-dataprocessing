@@ -30,10 +30,8 @@ chirps_end_date <- as.Date('2014/5/1')
 
 in_folder <- file.path(prefix, "GRP", "CHIRPS")
 out_folder <- file.path(prefix, "GRP", "CHIRPS")
-shp_folder <- file.path(prefix, "GRP", "Boundaries", "National")
 stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
-stopifnot(file_test('-d', shp_folder))
 
 iso_key <- read.csv(file.path('..', "ISO_Codes.csv"))
 
@@ -53,13 +51,7 @@ foreach (ISO_2=ISO_2s,
     timestamp()
     message('Processing ', ISO_2, '...')
 
-    # Mask out all areas outside Ethiopia
-    ISO_3 <- as.character(iso_key$ISO_3[match(ISO_2, iso_key$ISO_2)])
-    aoi <- readOGR(shp_folder, paste0(ISO_3, '_adm0'))
-    stopifnot(length(aoi) == 1)
-    aoi <- spTransform(aoi, CRS(proj4string(chirps)))
-
-    filename_base <- paste0(region, '_', product, '_', dataset, '_')
+    filename_base <- paste0(ISO_2, '_', product, '_', dataset, '_')
     chirps_tif_masked <- file.path(out_folder,
                             paste0(filename_base, date_limits_string, 
                                    '_NAs_masked.tif'))

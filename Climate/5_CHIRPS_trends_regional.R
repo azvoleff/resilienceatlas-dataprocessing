@@ -14,7 +14,7 @@ library(foreach)
 library(doParallel)
 library(spatial.tools)
 
-n_cpus <- 4
+n_cpus <- 2
 
 cl  <- makeCluster(n_cpus)
 registerDoParallel(cl)
@@ -48,18 +48,14 @@ s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
 
 region_polygons <- readOGR(shp_folder, 'GRP_regions')
 
-foreach (n=c(2:nrow(region_polygons)), .inorder=FALSE,
+foreach (n=c(3), .inorder=FALSE,
          .packages=c("rgdal", "lubridate", "dplyr", "raster",
-                     "rgeos", "teamlucc")) %dopar% {
+                     "rgeos", "teamlucc")) %do% {
     timestamp()
 
     aoi <- region_polygons[n, ]
     region <- as.character(aoi$Region)
     region <- gsub(' ', '', region)
-    aoi <- gConvexHull(aoi)
-    aoi <- spTransform(aoi, CRS(utm_zone(aoi, proj4string=TRUE)))
-    aoi <- gBuffer(aoi, width=100000)
-    aoi <- spTransform(aoi, CRS(s_srs))
 
     message('Processing ', region, '...')
 
