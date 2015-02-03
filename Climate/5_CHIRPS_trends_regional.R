@@ -48,7 +48,7 @@ s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
 
 region_polygons <- readOGR(shp_folder, 'GRP_regions')
 
-foreach (n=c(3), .inorder=FALSE,
+foreach (n=c(5), .inorder=FALSE,
          .packages=c("rgdal", "lubridate", "dplyr", "raster",
                      "rgeos", "teamlucc")) %do% {
     timestamp()
