@@ -44,10 +44,10 @@ num_periods <- 12
 # accompanying the data
 s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
 
-ISO_2s <- c("ET", "ID", "UG", "NE", "ER")
+ISO_2s <- c("ID", "UG", "NE", "ET", "ER")
 
 foreach (ISO_2=ISO_2s,
-         .packages=c("rgdal", "lubridate", "dplyr", "raster")) %dopar% {
+         .packages=c("rgdal", "lubridate", "dplyr", "raster")) %do% {
     timestamp()
     message('Processing ', ISO_2, '...')
 
