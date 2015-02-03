@@ -46,21 +46,12 @@ num_periods <- 12
 # accompanying the data
 s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
 
-ISO_2s <- c("ET", "DJ", "SO", "ER")
-
-ISO_2 <- c("ET")
+ISO_2s <- c("ET", "IN", "UG", "NE", "ER")
 
 foreach (ISO_2=ISO_2s,
          .packages=c("rgdal", "lubridate", "dplyr", "raster")) %dopar% {
     timestamp()
     message('Processing ', ISO_2, '...')
-
-    filename_base <- paste0(ISO_2, '_', product, '_', dataset, '_')
-
-    chirps_tif_masked <- file.path(out_folder,
-                            paste0(filename_base, date_limits_string, 
-                                   '_NAs_masked.tif'))
-    chirps <- brick(chirps_tif_masked)
 
     # Mask out all areas outside Ethiopia
     ISO_3 <- as.character(iso_key$ISO_3[match(ISO_2, iso_key$ISO_2)])
@@ -68,9 +59,13 @@ foreach (ISO_2=ISO_2s,
     stopifnot(length(aoi) == 1)
     aoi <- spTransform(aoi, CRS(proj4string(chirps)))
 
-    chirps <- mask(chirps, aoi) 
+    filename_base <- paste0(region, '_', product, '_', dataset, '_')
+    chirps_tif_masked <- file.path(out_folder,
+                            paste0(filename_base, date_limits_string, 
+                                   '_NAs_masked.tif'))
+    chirps <- brick(chirps_tif_masked)
 
-    # Setup a dataframe with the precipitation data so anomalies, etc can be 
+    # Setup a dataframe with the precipitation data so anomalies, etc. can be 
     # calculated
     years <- rep(yrs, each=num_periods)[1:nlayers(chirps)]
     years_rep <- rep(years, each=nrow(chirps)*ncol(chirps))
@@ -83,32 +78,18 @@ foreach (ISO_2=ISO_2s,
                             ppt=as.vector(chirps))
     chirps_df <- tbl_df(chirps_df)
 
-    # Map areas that are getting significantly wetter or drier, coded by mm per 
-    # year
-    get_trend <- function(pixels) {
-        mod <- lm(precip ~ 1 + year)
-    }
-
+    # Map areas that are getting signif. wetter or drier, coded by mm per year
     extract_coefs <- function(model) {
-        d <- data.frame(summary(model[[1]])$coefficients[, c(1, 4)])
+        d <- data.frame(summary(model)$coefficients[, c(1, 4)])
         d <- cbind(row.names(d), d)
         names(d) <- c('coef', 'estimate', 'p_val')
         row.names(d) <- NULL
         return(d)
     }
-
-    chirps_pix_models <- group_by(chirps_df, year, pixel) %>%
-        summarize(ppt_annual=sum(ppt, na.rm=TRUE))
-
-    chirps_pix_models <- group_by(chirps_df, year, pixel) %>%
+    annual_ppt_lm_coefs <- group_by(chirps_df, year, pixel) %>%
         summarize(ppt_annual=sum(ppt, na.rm=TRUE)) %>%
         group_by(pixel) %>%
-        do(model=lm(ppt_annual ~ year, data=.))
-
-    annual_ppt_lm_coefs <- group_by(chirps_pix_models, pixel) %>% do(extract_coefs(.$model))
-    save(annual_ppt_lm_coefs, 
-                file=file.path(out_folder, paste0(filename_base, 
-                                                      'annual_ppt_lm_coefs.RData')))
+        do(extract_coefs(lm(ppt_annual ~ year, data=.)))
 
     # Use chirps raster as a template
     annual_ppt_slope_rast <- brick(chirps, values=FALSE, nl=1)
@@ -116,27 +97,26 @@ foreach (ISO_2=ISO_2s,
                                matrix(filter(annual_ppt_lm_coefs, coef == "year")$estimate, 
                                       nrow=nrow(chirps)*ncol(chirps), 
                                       ncol=1, byrow=TRUE))
-    writeRaster(annual_ppt_slope_rast,
+    annual_ppt_slope_rast <- writeRaster(annual_ppt_slope_rast,
                 filename=file.path(out_folder, paste0(filename_base, 
                                                       'annual_ppt_slope.tif')), 
-                overwrite=TRUE, datatype="FLT4S")
+                overwrite=TRUE)
 
     annual_ppt_p_val_rast <- brick(chirps, values=FALSE, nl=1)
     annual_ppt_p_val_rast <- setValues(annual_ppt_p_val_rast,
                                matrix(filter(annual_ppt_lm_coefs, coef == "year")$p_val, 
                                       nrow=nrow(chirps)*ncol(chirps), 
                                       ncol=1, byrow=TRUE))
-
-    writeRaster(annual_ppt_p_val_rast,
+    annual_ppt_p_val_rast <- writeRaster(annual_ppt_p_val_rast,
                 filename=file.path(out_folder, paste0(filename_base, 
                                                       'annual_ppt_pval.tif')), 
-                overwrite=TRUE, datatype="FLT4S")
+                overwrite=TRUE)
 
     annual_ppt_slope_rast <- overlay(annual_ppt_slope_rast, annual_ppt_p_val_rast,
         fun=function(slp, p) {
             return(slp * (p < .05))
-        }
+        },
         filename=file.path(out_folder, paste0(filename_base, 
                                               'annual_ppt_slope_masked.tif')),
-        datatype="FLT4S")
+        overwrite=TRUE)
 }
