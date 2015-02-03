@@ -50,7 +50,7 @@ gdalbuildvrt(file.path(in_folder, '*.bil'), vrt_file, separate=TRUE,
 # accompanying the data
 s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
 
-ISO_2s <- c("ET", "DJ", "SO", "ER")
+ISO_2s <- c("ET", "ID", "UG", "NE", "ER")
 
 for (ISO_2 in ISO_2s) {
     timestamp()
