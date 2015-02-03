@@ -12,12 +12,12 @@ library(gdalUtils)
 library(rgeos)
 library(teamlucc)
 
-iso_key <- read.csv(file.path(prefix, "Global", "ISO_Codes.csv"))
+iso_key <- read.csv(file.path("..", "ISO_Codes.csv"))
 
 #dataset <- 'pentad'
 dataset <- 'monthly'
 
-in_folder <- file.path('D:/CHIRPS_Originals', paste0('global_', dataset))
+in_folder <- file.path('J:/CHIRPS_Originals', paste0('global_', dataset))
 out_folder <- file.path(prefix, "GRP", "CHIRPS")
 shp_folder <- file.path(prefix, "GRP", "Boundaries", "National")
 stopifnot(file_test("-d", shp_folder))
@@ -76,19 +76,15 @@ for (ISO_2 in ISO_2s) {
              multi=TRUE, wo=paste0("NUM_THREADS=", n_cpus), 
              overwrite=TRUE, ot="Int16")
 
-
     chirps <- brick(chirps_tif)
 
-    chirps_NA_value <- -9999
-    chirps <- calc(chirps, function(vals) {
-        vals[vals == chirps_NA_value] <- NA
-        return(vals)
-    })
-    # chirps <- mask(chirps, aoi)
     chirps_tif_masked <- file.path(out_folder,
                             paste0(ISO_2, '_', product, '_', dataset, '_', 
                                    datestrings[1], '-', 
                                    datestrings[length(datestrings)], '_NAs_masked.tif'))
-    chirps <- writeRaster(chirps, chirps_tif_masked, overwrite=TRUE, 
-                          datatype="INT2S")
+    chirps_NA_value <- -9999
+    chirps <- calc(chirps, function(vals) {
+            vals[vals == chirps_NA_value] <- NA
+            return(vals)
+        }, filename=chirps_tif_masked, overwrite=TRUE, datatype="INT2S")
 }
