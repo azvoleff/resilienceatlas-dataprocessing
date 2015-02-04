@@ -84,7 +84,7 @@ foreach (dataset=datasets, .inorder=FALSE,
         annual_lm_coefs <- group_by(cru_data_df, year, pixel) %>%
             summarize(annual_mean=mean(cru_data, na.rm=TRUE)) %>%
             group_by(pixel) %>%
-            do(extract_coefs(lm(annual ~ year, data=.)))
+            do(extract_coefs(lm(annual_mean ~ year, data=.)))
 
         # Use cru_data raster as a template
         annual_slope_rast <- brick(cru_data, values=FALSE, nl=1)
