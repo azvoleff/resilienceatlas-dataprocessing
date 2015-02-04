@@ -24,26 +24,26 @@ stopifnot(file_test("-d", shp_folder))
 stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
 
-bils <- dir(in_folder, pattern='.bil$')
+tifs <- dir(in_folder, pattern='.tif$')
 
-datestrings <- gsub('.bil', '', (str_extract(bils, '[0-9]{6}.bil$')))
+datestrings <- gsub('.tif', '', (str_extract(tifs, '[0-9]{6}.tif$')))
 years <- as.numeric(str_extract(datestrings, '^[0-9]{4}'))
 # The subyears strings are numeric codes referring to either pentads or months, 
 # depending on the dataset chosen.
 subyears <- as.numeric(str_extract(datestrings, '[0-9]{2}$'))
 
 datestrings <- datestrings[order(years, subyears)]
-bils <- bils[order(years, subyears)]
+tifs <- tifs[order(years, subyears)]
 
-product <- unique(str_extract(bils, '^v[0-9]*p[0-9]*chirps'))
+product <- unique(str_extract(tifs, '^v[0-9]*p[0-9]*chirps'))
 stopifnot(length(product) == 1)
 
 # Build a VRT with all dates in a single layer stacked VRT file (this stacks 
-# the bils, but with delayed computation - the actual cropping and stacking 
+# the tifs, but with delayed computation - the actual cropping and stacking 
 # computations won't take place until the gdalwarp line below that is run for 
 # each aoi)
 vrt_file <- extension(rasterTmpFile(), 'vrt')
-gdalbuildvrt(file.path(in_folder, '*.bil'), vrt_file, separate=TRUE, 
+gdalbuildvrt(file.path(in_folder, '*.tif'), vrt_file, separate=TRUE, 
              overwrite=TRUE)
 
 # This is the projection of the CHIRPS files, read from the .hdr files 
@@ -71,7 +71,7 @@ for (ISO_2 in ISO_2s) {
                                    datestrings[1], '-', 
                                    datestrings[length(datestrings)], '.tif'))
 
-    # Crop bils for this site
+    # Crop tifs for this site
     gdalwarp(vrt_file, chirps_tif, s_srs=s_srs, t_srs=s_srs, te=te, 
              multi=TRUE, wo=paste0("NUM_THREADS=", n_cpus), 
              overwrite=TRUE)
