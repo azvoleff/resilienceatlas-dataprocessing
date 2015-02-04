@@ -20,14 +20,12 @@ source('../0_settings.R')
 n_cpus <- 4
 overwrite <- TRUE
 
-iso_key <- read.csv(file.path("..", "ISO_Codes.csv"))
-
 product <- 'cru_ts3.22'
 datestring <- '1901.2013'
 
 in_folder <- file.path(prefix, "CRU", "cru_ts_3.22")
 out_folder <- file.path(prefix, "GRP", "CRU")
-shp_folder <- file.path(prefix, "GRP", "Boundaries", "National")
+shp_folder <- file.path(prefix, "GRP", "Boundaries", "Regional")
 stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
 stopifnot(file_test("-d", shp_folder))
@@ -37,7 +35,7 @@ datasets <- c('tmn', 'tmx', 'tmp', 'pet')
 # This is the projection of the CRU files
 s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
 
-ISO_2s <- c("ID", "ET", "UG", "NE", "ER")
+region_polygons <- readOGR(shp_folder, 'GRP_regions')
 
 foreach (dataset=datasets, .inorder=FALSE,
          .packages=c("teamlucc", "rgeos", "raster", "rgdal")) %dopar% {
@@ -49,17 +47,19 @@ foreach (dataset=datasets, .inorder=FALSE,
                                     sep='.'))
     this_dataset <- stack(ncdf)
 
-    for (ISO_2 in ISO_2s) {
-        ISO_3 <- as.character(iso_key$ISO_3[match(ISO_2, iso_key$ISO_2)])
-        aoi <- readOGR(shp_folder, paste0(ISO_3, '_adm0'))
-        stopifnot(length(aoi) == 1)
+    stopifnot(file_test('-f', ncdf))
+
+    for (n in 1:nrow(region_polygons)) {
+        aoi <- region_polygons[n, ]
+        region <- as.character(aoi$Region)
+        region <- gsub(' ', '', region)
         aoi <- gConvexHull(aoi)
         aoi <- spTransform(aoi, CRS(utm_zone(aoi, proj4string=TRUE)))
         aoi <- gBuffer(aoi, width=100000)
         aoi <- spTransform(aoi, CRS(s_srs))
 
         dstfile <- file.path(out_folder,
-                              paste0(ISO_2, "_", product, '_', dataset, '_', 
+                              paste0(region, "_", product, '_', dataset, '_', 
                                      datestring,  '.tif'))
         cropped_data <- crop(this_dataset, aoi, overwrite=TRUE, filename=dstfile)
     }
