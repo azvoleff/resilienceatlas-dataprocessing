@@ -82,10 +82,12 @@ for (ISO_2 in ISO_2s) {
     chirps_tif_masked <- file.path(out_folder,
                             paste0(ISO_2, '_', dataset, '_', 
                                    datestrings[1], '-', 
-                                   datestrings[length(datestrings)], '_NAs_masked.tif'))
+                                   datestrings[length(datestrings)], 
+                                   '_NAs_masked.tif'))
     chirps_NA_value <- -9999
     chirps <- calc(chirps, function(vals) {
             vals[vals == chirps_NA_value] <- NA
             return(vals)
         }, filename=chirps_tif_masked, overwrite=TRUE)
+
 }
