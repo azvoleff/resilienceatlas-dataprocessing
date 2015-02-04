@@ -26,7 +26,7 @@ stopifnot(file_test('-d', out_folder))
 
 tifs <- dir(in_folder, pattern='.tif$')
 
-datestrings <- gsub('.tif', '', (str_extract(tifs, '[0-9]{6}.tif$')))
+datestrings <- gsub('.tif', '', (str_extract(tifs, '[0-9]{4}\\.[0-9]{2}.tif$')))
 years <- as.numeric(str_extract(datestrings, '^[0-9]{4}'))
 # The subyears strings are numeric codes referring to either pentads or months, 
 # depending on the dataset chosen.

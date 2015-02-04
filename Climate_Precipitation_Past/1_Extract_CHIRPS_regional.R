@@ -31,7 +31,7 @@ stopifnot(file_test('-d', out_folder))
 
 tifs <- dir(in_folder, pattern='.tif$')
 
-datestrings <- gsub('.tif', '', (str_extract(tifs, '[0-9]{6}.tif$')))
+datestrings <- gsub('.tif', '', (str_extract(tifs, '[0-9]{4}\\.[0-9]{2}.tif$')))
 years <- as.numeric(str_extract(datestrings, '^[0-9]{4}'))
 # The subyears strings are numeric codes referring to either pentads or months, 
 # depending on the dataset chosen.
@@ -57,7 +57,7 @@ s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
 
 region_polygons <- readOGR(shp_folder, 'GRP_regions')
 
-foreach (n=c(2:nrow(region_polygons)), .inorder=FALSE,
+foreach (n=c(1:nrow(region_polygons)), .inorder=FALSE,
          .packages=c('raster', 'teamlucc', 'rgeos', 'gdalUtils',
                      'rgdal')) %dopar% {
     timestamp()
@@ -75,7 +75,6 @@ foreach (n=c(2:nrow(region_polygons)), .inorder=FALSE,
                             paste0(region, '_', product, '_', dataset, '_', 
                                    datestrings[1], '-', 
                                    datestrings[length(datestrings)], '.tif'))
-
     # Crop tifs for this site
     gdalwarp(vrt_file, chirps_tif, s_srs=s_srs, t_srs=s_srs, te=te, 
              multi=TRUE, wo=paste0("NUM_THREADS=", n_cpus), 
