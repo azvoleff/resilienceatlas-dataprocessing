@@ -46,6 +46,7 @@ foreach (dataset=datasets, .inorder=FALSE,
                       pattern=paste(product, datestring, dataset, 'dat.nc', 
                                     sep='.'))
     this_dataset <- stack(ncdf)
+    proj4string(this_dataset) <- s_srs
 
     stopifnot(file_test('-f', ncdf))
 

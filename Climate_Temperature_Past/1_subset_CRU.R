@@ -48,6 +48,7 @@ foreach (dataset=datasets, .inorder=FALSE,
                       pattern=paste(product, datestring, dataset, 'dat.nc', 
                                     sep='.'))
     this_dataset <- stack(ncdf)
+    proj4string(this_dataset) <- s_srs
 
     for (ISO_2 in ISO_2s) {
         ISO_3 <- as.character(iso_key$ISO_3[match(ISO_2, iso_key$ISO_2)])
