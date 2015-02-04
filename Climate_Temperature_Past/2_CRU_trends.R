@@ -73,18 +73,29 @@ foreach (dataset=datasets, .inorder=FALSE,
                                   cru_data=as.vector(cru_data))
         cru_data_df <- tbl_df(cru_data_df)
 
-        # Map areas that are getting signif. wetter or drier, coded by mm per year
-        extract_coefs <- function(model) {
-            d <- data.frame(summary(model)$coefficients[, c(1, 4)])
-            d <- cbind(row.names(d), d)
+        get_slope <- function(data) {
+            if (all(is.na(data$annual_data))) {
+                d <- data.frame(c("(Intercept)", "year"), NA, NA)
+            } else {
+                model <- lm(annual_data ~ year, data=data)
+                d <- data.frame(summary(model)$coefficients[, c(1, 4)])
+                d <- cbind(row.names(d), d)
+            }
             names(d) <- c('coef', 'estimate', 'p_val')
             row.names(d) <- NULL
             return(d)
         }
-        annual_lm_coefs <- group_by(cru_data_df, year, pixel) %>%
-            summarize(annual_mean=mean(cru_data, na.rm=TRUE)) %>%
-            group_by(pixel) %>%
-            do(extract_coefs(lm(annual_mean ~ year, data=.)))
+        if (dataset == "pet") {
+            annual_lm_coefs <- group_by(cru_data_df, year, pixel) %>%
+                summarize(annual_data=mean(cru_data, na.rm=TRUE)) %>%
+                group_by(pixel) %>%
+                do(get_slope(.))
+        } else {
+            annual_lm_coefs <- group_by(cru_data_df, year, pixel) %>%
+                summarize(annual_data=mean(cru_data, na.rm=TRUE)) %>%
+                group_by(pixel) %>%
+                do(get_slope(.))
+        }
 
         # Use cru_data raster as a template
         annual_slope_rast <- brick(cru_data, values=FALSE, nl=1)
@@ -107,13 +118,14 @@ foreach (dataset=datasets, .inorder=FALSE,
                                                           'annual_pval.tif')), 
                     overwrite=TRUE)
 
-        annual_slope_rast <- overlay(annual_slope_rast, annual_p_val_rast,
+        annual_slope_rast_masked <- overlay(annual_slope_rast, annual_p_val_rast,
             fun=function(slp, p) {
                 return(slp * (p < .05))
             },
             filename=file.path(out_folder, paste0(filename_base, 
                                                   'annual_slope_masked.tif')),
             overwrite=TRUE)
+
 }
 
 stopCluster(cl)
