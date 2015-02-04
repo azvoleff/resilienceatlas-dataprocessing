@@ -17,7 +17,6 @@ registerDoParallel(cl)
 
 source('../0_settings.R')
 
-n_cpus <- 4
 overwrite <- TRUE
 
 product <- 'cru_ts3.22'

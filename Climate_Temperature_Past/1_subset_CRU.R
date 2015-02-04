@@ -17,7 +17,6 @@ registerDoParallel(cl)
 
 source('../0_settings.R')
 
-n_cpus <- 4
 overwrite <- TRUE
 
 iso_key <- read.csv(file.path("..", "ISO_Codes.csv"))
