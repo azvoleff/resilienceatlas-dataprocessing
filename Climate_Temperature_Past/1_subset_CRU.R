@@ -64,3 +64,5 @@ foreach (dataset=datasets, .inorder=FALSE,
         cropped_data <- crop(this_dataset, aoi, overwrite=TRUE, filename=dstfile)
     }
 }
+
+stopCluster(cl)

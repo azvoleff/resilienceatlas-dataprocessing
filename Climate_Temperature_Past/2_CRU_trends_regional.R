@@ -120,3 +120,5 @@ foreach (dataset=datasets, .inorder=FALSE,
             overwrite=TRUE)
     }
 }
+
+stopCluster(cl)
