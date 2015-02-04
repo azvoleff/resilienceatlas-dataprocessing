@@ -48,7 +48,7 @@ s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
 ISO_2s <- c("ID", "UG", "NE", "ET", "ER")
 
 foreach (dataset=datasets, .inorder=FALSE,
-         .packages=c("rgdal", "lubridate", "dplyr", "raster")) %:% {
+         .packages=c("rgdal", "lubridate", "dplyr", "raster")) %:%
     foreach (ISO_2=ISO_2s, .inorder=FALSE) %dopar% {
         filename_base <- paste0(ISO_2, '_', product, '_', dataset, '_')
         cru_data_file <- file.path(out_folder,
@@ -114,7 +114,6 @@ foreach (dataset=datasets, .inorder=FALSE,
             filename=file.path(out_folder, paste0(filename_base, 
                                                   'annual_slope_masked.tif')),
             overwrite=TRUE)
-    }
 }
 
 stopCluster(cl)

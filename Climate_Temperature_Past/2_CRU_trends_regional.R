@@ -48,7 +48,7 @@ s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
 region_polygons <- readOGR(shp_folder, 'GRP_regions')
 
 foreach (dataset=datasets, .inorder=FALSE,
-         .packages=c("rgdal", "lubridate", "dplyr", "raster")) %:% {
+         .packages=c("rgdal", "lubridate", "dplyr", "raster")) %:%
     foreach (n=c(1:nrow(region_polygons)), .inorder=FALSE) %dopar% {
         aoi <- region_polygons[n, ]
         region <- as.character(aoi$Region)
@@ -118,7 +118,6 @@ foreach (dataset=datasets, .inorder=FALSE,
             filename=file.path(out_folder, paste0(filename_base, 
                                                   'annual_slope_masked.tif')),
             overwrite=TRUE)
-    }
 }
 
 stopCluster(cl)
