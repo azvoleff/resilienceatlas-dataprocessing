@@ -40,9 +40,6 @@ subyears <- as.numeric(str_extract(datestrings, '[0-9]{2}$'))
 datestrings <- datestrings[order(years, subyears)]
 tifs <- tifs[order(years, subyears)]
 
-product <- unique(str_extract(tifs, '^v[0-9]*p[0-9]*chirps'))
-stopifnot(length(product) == 1)
-
 # Build a VRT with all dates in a single layer stacked VRT file (this stacks 
 # the tifs, but with delayed computation - the actual cropping and stacking 
 # computations won't take place until the gdalwarp line below that is run for 
@@ -72,7 +69,7 @@ foreach (n=c(1:nrow(region_polygons)), .inorder=FALSE,
     te <- as.numeric(bbox(aoi))
 
     chirps_tif <- file.path(out_folder,
-                            paste0(region, '_', product, '_', dataset, '_', 
+                            paste0(region, '_', dataset, '_', 
                                    datestrings[1], '-', 
                                    datestrings[length(datestrings)], '.tif'))
     # Crop tifs for this site
@@ -84,7 +81,7 @@ foreach (n=c(1:nrow(region_polygons)), .inorder=FALSE,
 
     chirps_NA_value <- -9999
     chirps_tif_masked <- file.path(out_folder,
-                            paste0(region, '_', product, '_', dataset, '_', 
+                            paste0(region, '_', dataset, '_', 
                                    datestrings[1], '-', 
                                    datestrings[length(datestrings)], '_NAs_masked.tif'))
     chirps <- calc(chirps, function(vals) {

@@ -19,8 +19,6 @@ n_cpus <- 2
 cl  <- makeCluster(n_cpus)
 registerDoParallel(cl)
 
-product <- 'v1p8chirps'
-
 # For monthly data:
 dataset <- 'monthly' # For SPI, use monthly
 date_limits_string <- '198101-201404'
@@ -59,7 +57,7 @@ foreach (n=c(3), .inorder=FALSE,
 
     message('Processing ', region, '...')
 
-    filename_base <- paste0(region, '_', product, '_', dataset, '_')
+    filename_base <- paste0(region, '_', dataset, '_')
     chirps_tif_masked <- file.path(out_folder,
                             paste0(filename_base, date_limits_string, 
                                    '_NAs_masked.tif'))
