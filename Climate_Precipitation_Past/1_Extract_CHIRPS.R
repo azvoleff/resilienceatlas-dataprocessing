@@ -71,7 +71,7 @@ for (ISO_2 in ISO_2s) {
 
     # Crop tifs for this site
     gdalwarp(vrt_file, chirps_tif, s_srs=s_srs, t_srs=s_srs, te=te, 
-             multi=TRUE, wo=paste0("NUM_THREADS=", n_cpus), 
+             r="bilinear", multi=TRUE, wo=paste0("NUM_THREADS=", n_cpus), 
              overwrite=TRUE)
 
     chirps <- brick(chirps_tif)
