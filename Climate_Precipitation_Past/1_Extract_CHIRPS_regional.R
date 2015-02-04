@@ -68,6 +68,9 @@ foreach (n=c(1:nrow(region_polygons)), .inorder=FALSE,
     aoi <- spTransform(aoi, CRS(s_srs))
     te <- as.numeric(bbox(aoi))
 
+    # Round extent so that pixels are aligned properly
+    te <- round(te*20)/20
+
     chirps_tif <- file.path(out_folder,
                             paste0(region, '_', dataset, '_', 
                                    datestrings[1], '-', 

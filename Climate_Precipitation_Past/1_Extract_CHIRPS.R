@@ -64,6 +64,9 @@ for (ISO_2 in ISO_2s) {
     aoi <- spTransform(aoi, CRS(s_srs))
     te <- as.numeric(bbox(aoi))
 
+    # Round extent so that pixels are aligned properly
+    te <- round(te*20)/20
+
     chirps_tif <- file.path(out_folder,
                             paste0(ISO_2, '_', dataset, '_', 
                                    datestrings[1], '-', 
