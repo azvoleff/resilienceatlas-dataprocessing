@@ -50,12 +50,11 @@ stopifnot(file_test('-d', shp_folder))
 ISO_2s <- c("NE", "ET", "ER")
 regions <- c("Sahel", "HornofAfrica", "HornofAfrica")
 
-temp_stats <- foreach (n=length(ISO_2s), .inorder=FALSE,
+temp_stats <- foreach (geog_num=length(ISO_2s), .inorder=FALSE,
                        .packages=c("rgdal", "lubridate", "dplyr",
-                                   "raster", "foreach")) %dopar% {
-
-    ISO_2 <- ISO_2s[n]
-    region <- regions[n]
+                                   "raster", "foreach", "ggplot2")) %dopar% {
+    ISO_2 <- ISO_2s[geog_num]
+    region <- regions[geog_num]
 
     ISO_3 <- as.character(iso_key$ISO_3[match(ISO_2, iso_key$ISO_2)])
     aoi <- readOGR(shp_folder, paste0(ISO_3, '_adm0'))
@@ -92,7 +91,7 @@ temp_stats <- foreach (n=length(ISO_2s), .inorder=FALSE,
     }
 
     write.csv(annual_means,
-              file=file.path(out_folder, paste0(region, "_", product, 
+              file=file.path(out_folder, paste0(ISO_2, "_", product, 
                                                 '_meanannual_timeseries.csv')),
               row.names=FALSE)
 
@@ -106,10 +105,10 @@ temp_stats <- foreach (n=length(ISO_2s), .inorder=FALSE,
         xlab('Year') + ylab('Degrees (C)') +
         scale_x_continuous(breaks=c(1984, 2000, 2014)) +
         scale_colour_discrete("Temperature")
-    ggsave(file.path(out_folder, paste0(region, "_", product, 
+    ggsave(file.path(out_folder, paste0(ISO_2, "_", product, 
                                         '_meanannual_timeseries.png')), p,
            width=4, height=2, dpi=PLOT_DPI)
-    ggsave(file.path(out_folder, paste0(region, "_", product, 
+    ggsave(file.path(out_folder, paste0(ISO_2, "_", product, 
                                         '_meanannual_timeseries.svg')), p,
            width=4, height=2, dpi=PLOT_DPI)
 }
