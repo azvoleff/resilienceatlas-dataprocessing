@@ -109,7 +109,7 @@ temp_stats <- foreach (geog_num=1:length(ISO_2s), .inorder=FALSE,
                                         '_meanannual_timeseries.png')), p,
            width=4, height=2, dpi=PLOT_DPI)
     ggsave(file.path(out_folder, paste0(ISO_2, "_", product, 
-                                        '_meanannual_timeseries.svg')), p,
+                                        '_meanannual_timeseries.eps')), p,
            width=4, height=2, dpi=PLOT_DPI)
 }
 

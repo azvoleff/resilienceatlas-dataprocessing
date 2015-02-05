@@ -606,9 +606,5 @@ p <- ggplot(sensitivity, aes(type, yield_sensitivity, colour=type)) +
           legend.position="none")
 ggsave(paste0("ET", "_yield_sensitivity.png"), p, width=4, height=2, 
        dpi=PLOT_DPI)
-ggsave(paste0("ET", "_yield_sensitivity.svg"), p, width=4, height=2, 
-       dpi=PLOT_DPI)
 ggsave(paste0("ET", "_yield_sensitivity.eps"), p, width=4, height=2, 
        dpi=PLOT_DPI)
-ggsave(paste0("ET", "_yield_sensitivity.pdf"), p, width=4, height=2,
-       dpi=PLOT_DPI, useDingbats=FALSE)
