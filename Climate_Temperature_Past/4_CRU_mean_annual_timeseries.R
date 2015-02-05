@@ -50,7 +50,7 @@ stopifnot(file_test('-d', shp_folder))
 ISO_2s <- c("NE", "ET", "ER")
 regions <- c("Sahel", "HornofAfrica", "HornofAfrica")
 
-temp_stats <- foreach (geog_num=length(ISO_2s), .inorder=FALSE,
+temp_stats <- foreach (geog_num=1:length(ISO_2s), .inorder=FALSE,
                        .packages=c("rgdal", "lubridate", "dplyr",
                                    "raster", "foreach", "ggplot2")) %dopar% {
     ISO_2 <- ISO_2s[geog_num]
