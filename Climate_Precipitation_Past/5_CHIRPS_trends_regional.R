@@ -26,7 +26,7 @@ date_limits_string <- '198101-201404'
 # Note the below code is INCLUSIVE of the start date
 chirps_start_date <- as.Date('1981/1/1')
 # Note the below code is EXCLUSIVE of the end date
-chirps_end_date <- as.Date('2014/5/1')
+chirps_end_date <- as.Date('2015/1/1')
 
 in_folder <- file.path(prefix, "GRP", "CHIRPS")
 out_folder <- file.path(prefix, "GRP", "CHIRPS")
@@ -39,6 +39,9 @@ yrs <- seq(year(chirps_start_date), year(chirps_end_date))
 dates <- seq(chirps_start_date, chirps_end_date, by='months')
 dates <- dates[dates < chirps_end_date]
 num_periods <- 12
+
+start_date <- format(dates[1], '%Y%m')
+end_date <- format(dates[length(dates)], '%Y%m')
 
 # This is the projection of the CHIRPS files, read from the .hdr files 
 # accompanying the data
@@ -57,10 +60,8 @@ foreach (n=c(3), .inorder=FALSE,
 
     message('Processing ', region, '...')
 
-    filename_base <- paste0(region, '_', dataset, '_')
-    chirps_tif_masked <- file.path(out_folder,
-                            paste0(filename_base, date_limits_string, 
-                                   '_NAs_masked.tif'))
+    base_name <- file.path(out_folder, paste0(region, '_CHIRPS_', dataset))
+    chirps_tif_masked <- paste0(base_name, '_', start_date, '-', end_date, '_NAs_masked.tif')
     chirps <- brick(chirps_tif_masked)
 
     # Setup a dataframe with the precipitation data so anomalies, etc. can be 
@@ -96,8 +97,7 @@ foreach (n=c(3), .inorder=FALSE,
                                       nrow=nrow(chirps)*ncol(chirps), 
                                       ncol=1, byrow=TRUE))
     annual_ppt_slope_rast <- writeRaster(annual_ppt_slope_rast,
-                filename=file.path(out_folder, paste0(filename_base, 
-                                                      'annual_ppt_slope.tif')), 
+                filename=paste0(base_name, 'annual_ppt_slope.tif'), 
                 overwrite=TRUE)
 
     annual_ppt_p_val_rast <- brick(chirps, values=FALSE, nl=1)
@@ -106,16 +106,14 @@ foreach (n=c(3), .inorder=FALSE,
                                       nrow=nrow(chirps)*ncol(chirps), 
                                       ncol=1, byrow=TRUE))
     annual_ppt_p_val_rast <- writeRaster(annual_ppt_p_val_rast,
-                filename=file.path(out_folder, paste0(filename_base, 
-                                                      'annual_ppt_pval.tif')), 
+                filename=paste0(base_name, 'annual_ppt_pval.tif'), 
                 overwrite=TRUE)
 
     annual_ppt_slope_rast <- overlay(annual_ppt_slope_rast, annual_ppt_p_val_rast,
         fun=function(slp, p) {
             return(slp * (p < .05))
         },
-        filename=file.path(out_folder, paste0(filename_base, 
-                                              'annual_ppt_slope_masked.tif')),
+        filename=paste0(base_name, 'annual_ppt_slope_masked.tif'),
         overwrite=TRUE)
 
 }
