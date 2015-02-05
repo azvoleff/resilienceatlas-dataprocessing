@@ -34,7 +34,8 @@ num_periods <- 12
 start_date <- as.Date('1984/1/1') # Inclusive
 end_date <- as.Date('2014/1/1') # Exclusive
 
-datasets <- c('tmn', 'tmx', 'tmp', 'pet')
+#datasets <- c('tmn', 'tmx', 'tmp', 'pet')
+datasets <- c('tmp')
 
 in_folder <- file.path(prefix, "GRP", "CRU")
 out_folder <- file.path(prefix, "GRP", "CRU")
@@ -43,13 +44,13 @@ stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
 stopifnot(file_test('-d', shp_folder))
 
-s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
-
 region_polygons <- readOGR(shp_folder, 'GRP_regions')
+
+region_rows <- c(2, 3, 5)
 
 foreach (dataset=datasets, .inorder=FALSE,
          .packages=c("rgdal", "lubridate", "dplyr", "raster")) %:%
-    foreach (n=c(1:nrow(region_polygons)), .inorder=FALSE) %dopar% {
+    foreach (n=region_rows, .inorder=FALSE) %dopar% {
         aoi <- region_polygons[n, ]
         region <- as.character(aoi$Region)
         region <- gsub(' ', '', region)
@@ -124,7 +125,8 @@ foreach (dataset=datasets, .inorder=FALSE,
 
         annual_slope_rast <- overlay(annual_slope_rast, annual_p_val_rast,
             fun=function(slp, p) {
-                return(slp * (p < .05))
+                slp[p > .05] <- NA
+                return(slp)
             },
             filename=file.path(out_folder, paste0(filename_base, 
                                                   'annual_slope_masked.tif')),

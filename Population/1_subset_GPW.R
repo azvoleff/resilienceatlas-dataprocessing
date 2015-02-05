@@ -63,7 +63,7 @@ areakm_orig <- file.path(pop_folder, dir(pop_folder,
 # This is the projection of the GPW files, as stated in the metadata file
 s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
 
-ISO_2s <- c("ET", "DJ", "SO", "ER")
+ISO_2s <- c("ID", "ET", "UG", "NE", "ER")
 
 #ISO_2 <- ISO_2s[1]
 for (ISO_2 in ISO_2s) {
@@ -83,21 +83,20 @@ for (ISO_2 in ISO_2s) {
     te <- as.numeric(bbox(aoi))
 
     # Crop tifs for this site
-    dens_tif <- file.path(out_folder, paste0(ISO_3, '_', dens_name, '_',
+    dens_tif <- file.path(out_folder, paste0(ISO_2, '_', dens_name, '_',
                                             min_year, '-', max_year, '.tif'))
     gdalwarp(dens_vrt, dens_tif, s_srs=s_srs, t_srs=s_srs, te=te, 
              multi=TRUE, wo=paste0("NUM_THREADS=", n_cpus), 
              overwrite=TRUE)
 
-    count_tif <- file.path(out_folder, paste0(ISO_3, '_', count_name, '_',
+    count_tif <- file.path(out_folder, paste0(ISO_2, '_', count_name, '_',
                                               min_year, '-', max_year, '.tif'))
     gdalwarp(count_vrt, count_tif, s_srs=s_srs, t_srs=s_srs, te=te, 
              multi=TRUE, wo=paste0("NUM_THREADS=", n_cpus), 
              overwrite=TRUE)
 
-    areakm_tif <- file.path(out_folder, paste0(ISO_3, '_', areakm_name, '.tif'))
+    areakm_tif <- file.path(out_folder, paste0(ISO_2, '_', areakm_name, '.tif'))
     gdalwarp(areakm_orig, areakm_tif, s_srs=s_srs, t_srs=s_srs, te=te, 
              multi=TRUE, wo=paste0("NUM_THREADS=", n_cpus), 
              overwrite=TRUE)
-
 }
