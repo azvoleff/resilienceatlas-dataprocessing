@@ -53,7 +53,7 @@ region_rows <- c(2, 3, 5)
 
 foreach (n=region_rows, .inorder=FALSE,
          .packages=c("rgdal", "lubridate", "dplyr", "raster",
-                     "rgeos", "teamlucc")) %do% {
+                     "rgeos", "teamlucc")) %dopar% {
     timestamp()
 
     aoi <- region_polygons[n, ]
@@ -119,3 +119,5 @@ foreach (n=region_rows, .inorder=FALSE,
         overwrite=TRUE)
 
 }
+
+stopCluster(cl)
