@@ -13,7 +13,7 @@ prefix <- prefixes[match(TRUE, unlist(lapply(prefixes, function(x) file_test('-d
 geogs <- read.csv(file.path(prefix, 'GRP', 'GRP_Countries.csv'))
 
 temps <- c('C:/Temp', # Local
-           'S:/Temp', # Shared Blue drive
+           'S:/Temp', # Blue data share
            'H:/Temp', # Buffalo drive
            'O:/Temp', # Blue drive (HP or thinkpad)
            '/localdisk/home/azvoleff/Temp', # vertica1
