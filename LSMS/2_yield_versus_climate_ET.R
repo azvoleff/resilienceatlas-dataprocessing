@@ -589,6 +589,9 @@ sensitivity <- data.frame(crop=c('Maize', 'Maize', 'Teff',
                           yield_sensitivity=yield_sensitivity,
                           std_err=std_errors)
 
+sensitivity$crop <- ordered(sensitivity$crop, level=c('Maize', 'Teff', 
+                                                      'Barley'))
+
 # Note: these results are consistent with FAO data - Barley needs less water 
 # than maize, so would tend to be growing in drier areas
 
