@@ -14,7 +14,7 @@ library(teamlucc)
 library(foreach)
 library(doParallel)
 
-n_cpus <- 3
+n_cpus <- 4
 
 cl  <- makeCluster(n_cpus)
 registerDoParallel(cl)
@@ -22,7 +22,7 @@ registerDoParallel(cl)
 #dataset <- 'pentad'
 dataset <- 'monthly'
 
-in_folder <- file.path('J:/CHIRPS_Originals', paste0('global_', dataset))
+in_folder <- file.path('E:/CHIRPS_Originals', paste0('global_', dataset))
 out_folder <- file.path(prefix, "GRP", "CHIRPS")
 shp_folder <- file.path(prefix, "GRP", "Boundaries", "Regional")
 stopifnot(file_test("-d", shp_folder))
@@ -39,6 +39,10 @@ subyears <- as.numeric(str_extract(datestrings, '[0-9]{2}$'))
 
 datestrings <- datestrings[order(years, subyears)]
 tifs <- tifs[order(years, subyears)]
+
+datestrings <- gsub('.', '', datestrings)
+start_date <- datestrings[1]
+end_date <- datestrings[length(datestrings)]
 
 # Build a VRT with all dates in a single layer stacked VRT file (this stacks 
 # the tifs, but with delayed computation - the actual cropping and stacking 
@@ -71,22 +75,19 @@ foreach (n=c(1:nrow(region_polygons)), .inorder=FALSE,
     # Round extent so that pixels are aligned properly
     te <- round(te*20)/20
 
-    chirps_tif <- file.path(out_folder,
-                            paste0(region, '_', dataset, '_', 
-                                   datestrings[1], '-', 
-                                   datestrings[length(datestrings)], '.tif'))
+    base_name <- file.path(out_folder,
+                           paste0(region, '_CHIRPS_', dataset,
+                                  '_', start_date, '-', end_date))
+
+    chirps_tif <- paste0(base_name, '.tif')
     # Crop tifs for this site
-    gdalwarp(vrt_file, chirps_tif, s_srs=s_srs, t_srs=s_srs, te=te, 
-             r="bilinear", multi=TRUE, wo=paste0("NUM_THREADS=", n_cpus), 
-             overwrite=TRUE)
+    gdalwarp(vrt_file, chirps_tif, s_srs=s_srs, t_srs=s_srs, te=te,
+             multi=TRUE, wo=paste0("NUM_THREADS=", n_cpus), overwrite=TRUE)
 
     chirps <- brick(chirps_tif)
 
     chirps_NA_value <- -9999
-    chirps_tif_masked <- file.path(out_folder,
-                            paste0(region, '_', dataset, '_', 
-                                   datestrings[1], '-', 
-                                   datestrings[length(datestrings)], '_NAs_masked.tif'))
+    chirps_tif_masked <- paste0(base_name, '_NAs_masked.tif')
     chirps <- calc(chirps, function(vals) {
             vals[vals == chirps_NA_value] <- NA
             return(vals)
