@@ -52,7 +52,7 @@ regions <- c("Sahel", "HornofAfrica", "HornofAfrica")
 
 temp_stats <- foreach (n=length(ISO_2s), .inorder=FALSE,
                        .packages=c("rgdal", "lubridate", "dplyr",
-                                   "raster")) %dopar% {
+                                   "raster", "foreach")) %dopar% {
 
     ISO_2 <- ISO_2s[n]
     region <- regions[n]
