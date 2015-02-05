@@ -6,6 +6,7 @@
 
 source('../0_settings.R')
 
+library(arm) # for se.coef
 library(foreign)
 library(spgwr)
 library(raster)
@@ -490,9 +491,10 @@ ggplot(filter(yield, Crop %in% c("Maize", "Sorghum", "Teff", "Barley"))) +
 
 lm.beta.lmer <- function(mod) {
    b <- fixef(mod)[-1]
+   stderror <- se.coef(mod)$fixef[-1]
    sd.x <- apply(getME(mod,"X")[,-1], 2, sd)
    sd.y <- sd(getME(mod, "y"))
-   b*sd.x/sd.y
+   data.frame(coef=b*sd.x/sd.y, stderr=stderror*sd.x/sd.y)
 }
 
 yield_maize <- filter(yield, Crop == "Maize") %>%
@@ -501,32 +503,34 @@ yield_maize <- filter(yield, Crop == "Maize") %>%
            precip_anom_12,  ea_id)
 maize_model <- lmer(yld_kg_ha ~ . - ea_id + srtm_cut + (1 | ea_id), data=yield_maize)
 summary(maize_model)
-
-
-maize_sp <- subset(yield_sp, Crop == "Maize")
-maize_sp <- maize_sp[, c("yld_kg_ha", "fertilizer", "improved_seed", 
-                         "hldr_ext", "hldr_chem_fert", "hldr_svc_credit", 
-                         "srtm_cut", "precip_mean_annual", "precip_anom_12", 
-                         "ea_id")]
-maize_sp <- subset(maize_sp, complete.cases(maize_sp@data))
-
-yield_maize_gwr_bw <- gwr.sel(yld_kg_ha ~ fertilizer + improved_seed + hldr_ext 
-                              + hldr_chem_fert + hldr_svc_credit + srtm_cut + 
-                              precip_mean_annual + precip_anom_12,
-                              data=maize_sp,
-                              gweight=gwr.Gauss)
-
-yield_maize_gwr <- gwr(yld_kg_ha ~ fertilizer + improved_seed + hldr_ext + 
-                       hldr_chem_fert + hldr_svc_credit + srtm_cut + 
-                       precip_mean_annual + precip_anom_12,
-                       data=maize_sp,
-                       bandwidth=500)
-spplot(yield_maize_gwr$SDF, c("precip_mean_annual"))
-spplot(yield_maize_gwr$SDF, c("precip_anom_12"))
-spplot(yield_maize_gwr$SDF, c("fertilizerTRUE"))
-
-# summary(lm(yld_kg_ha ~ . - ea_id, data=yield_maize))
+lm.beta.lmer(maize_model)
 summary(yield_maize)
+
+# maize_sp <- subset(yield_sp, Crop == "Maize")
+# maize_sp <- maize_sp[, c("yld_kg_ha", "fertilizer", "improved_seed", 
+#                          "hldr_ext", "hldr_chem_fert", "hldr_svc_credit", 
+#                          "srtm_cut", "precip_mean_annual", "precip_anom_12", 
+#                          "ea_id")]
+# maize_sp <- subset(maize_sp, complete.cases(maize_sp@data))
+
+# yield_maize_gwr_bw <- gwr.sel(yld_kg_ha ~ fertilizer + improved_seed + hldr_ext 
+#                               + hldr_chem_fert + hldr_svc_credit + srtm_cut + 
+#                               precip_mean_annual + precip_anom_12,
+#                               data=maize_sp,
+#                               gweight=gwr.Gauss)
+#
+# yield_maize_gwr <- gwr(yld_kg_ha ~ fertilizer + improved_seed + hldr_ext + 
+#                        hldr_chem_fert + hldr_svc_credit + srtm_cut + 
+#                        precip_mean_annual + precip_anom_12,
+#                        data=maize_sp,
+#                        bandwidth=500)
+#
+
+# spplot(yield_maize_gwr$SDF, c("precip_mean_annual"))
+# spplot(yield_maize_gwr$SDF, c("precip_anom_12"))
+# spplot(yield_maize_gwr$SDF, c("fertilizerTRUE"))
+#
+# summary(lm(yld_kg_ha ~ . - ea_id, data=yield_maize))
 
 yield_barley <- filter(yield, Crop == "Barley") %>%
     select(yld_kg_ha, fertilizer, hldr_ext, 
@@ -535,24 +539,73 @@ yield_barley <- filter(yield, Crop == "Barley") %>%
 barley_model <- lmer(yld_kg_ha ~ . - ea_id + (1 | ea_id), data=yield_barley)
 summary(barley_model)
 lm.beta.lmer(barley_model)
-
 summary(yield_barley)
 
 yield_teff <- filter(yield, Crop == "Teff") %>%
     select(yld_kg_ha, fertilizer, hldr_ext, 
-           hldr_svc_credit, precip_anom_12,  ea_id)
-summary(lmer(yld_kg_ha ~ . - ea_id + (1 | ea_id), data=yield_teff))
-# summary(lm(yld_kg_ha ~ . - ea_id, data=yield_teff))
+           hldr_svc_credit, srtm_cut, precip_mean_annual, precip_anom_12,  
+           ea_id)
+teff_model <- lmer(yld_kg_ha ~ . - ea_id + (1 | ea_id), data=yield_teff)
+summary(teff_model)
+lm.beta.lmer(teff_model)
 summary(yield_teff)
 
 yield_sorghum <- filter(yield, Crop == "Sorghum") %>%
     select(yld_kg_ha, fertilizer, hldr_ext, 
            hldr_chem_fert, hldr_svc_credit, precip_anom_12,  ea_id)
-summary(lmer(yld_kg_ha ~ . - ea_id + (1 | ea_id), data=yield_sorghum))
+sorghum_model <- lmer(yld_kg_ha ~ . - ea_id + (1 | ea_id), data=yield_sorghum)
 # summary(lm(yld_kg_ha ~ . - ea_id, data=yield_sorghum))
 summary(yield_sorghum)
 
-spplot(subset(yield_sp, yield_sp$Crop == "Maize"), "yld_kg_ha")
-spplot(subset(yield_sp, yield_sp$Crop == "Teff"), "yld_kg_ha")
-spplot(subset(yield_sp, yield_sp$Crop == "Barley"), "yld_kg_ha")
-spplot(subset(yield_sp, yield_sp$Crop == "Sorghum"), "yld_kg_ha")
+# spplot(subset(yield_sp, yield_sp$Crop == "Maize"), "yld_kg_ha")
+# spplot(subset(yield_sp, yield_sp$Crop == "Teff"), "yld_kg_ha")
+# spplot(subset(yield_sp, yield_sp$Crop == "Barley"), "yld_kg_ha")
+# spplot(subset(yield_sp, yield_sp$Crop == "Sorghum"), "yld_kg_ha")
+
+get_std_error <- function(model, term) {
+    term_num <- which(names(fixef(model)) == term)
+    stopifnot(length(term_num) == 1)
+    se.coef(model)$fixef[term_num]
+}
+
+# Plot coefficients from all three models for report
+yield_sensitivity <- c(fixef(maize_model)["precip_mean_annual"],
+                       fixef(maize_model)["precip_anom_12"],
+                       fixef(teff_model)["precip_mean_annual"],
+                       fixef(teff_model)["precip_anom_12"],
+                       fixef(barley_model)["precip_mean_annual"],
+                       fixef(barley_model)["precip_anom_12"])
+std_errors <- c(get_std_error(maize_model, "precip_mean_annual"),
+                get_std_error(maize_model, "precip_anom_12"),
+                get_std_error(teff_model, "precip_mean_annual"),
+                get_std_error(teff_model, "precip_anom_12"),
+                get_std_error(barley_model, "precip_mean_annual"),
+                get_std_error(barley_model, "precip_anom_12"))
+
+sensitivity <- data.frame(crop=c('Maize', 'Maize', 'Teff',
+                                 'Teff', 'Barley', 'Barley'),
+                          type=c('Climate', 'Seasonal', 'Climate',
+                                 'Seasonal', 'Climate', 'Seasonal'),
+                          yield_sensitivity=yield_sensitivity,
+                          std_err=std_errors)
+
+# Note: these results are consistent with FAO data - Barley needs less water 
+# than maize, so would tend to be growing in drier areas
+
+p <- ggplot(sensitivity, aes(type, yield_sensitivity, colour=type)) + 
+    theme_grey(base_size=8) +
+    geom_point(size=1) + facet_grid(~crop) +
+    geom_errorbar(aes(ymin=-1.96*std_err+yield_sensitivity,
+                      ymax=1.96*std_err+yield_sensitivity, width=.25)) +
+    ylab("Change in yield (kg / ha)") +
+    ylim(c(-250, 250)) +
+    theme(axis.title.x=element_blank(),
+          legend.position="none")
+ggsave(paste0("ET", "_yield_sensitivity.png"), p, width=4, height=2, 
+       dpi=PLOT_DPI)
+ggsave(paste0("ET", "_yield_sensitivity.svg"), p, width=4, height=2, 
+       dpi=PLOT_DPI)
+ggsave(paste0("ET", "_yield_sensitivity.eps"), p, width=4, height=2, 
+       dpi=PLOT_DPI)
+ggsave(paste0("ET", "_yield_sensitivity.pdf"), p, width=4, height=2,
+       dpi=PLOT_DPI, useDingbats=FALSE)
