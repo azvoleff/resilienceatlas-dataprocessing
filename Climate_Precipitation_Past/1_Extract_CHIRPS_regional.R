@@ -40,7 +40,7 @@ subyears <- as.numeric(str_extract(datestrings, '[0-9]{2}$'))
 datestrings <- datestrings[order(years, subyears)]
 tifs <- tifs[order(years, subyears)]
 
-datestrings <- gsub('.', '', datestrings)
+datestrings <- gsub('[.]', '', datestrings)
 start_date <- datestrings[1]
 end_date <- datestrings[length(datestrings)]
 
@@ -58,7 +58,9 @@ s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
 
 region_polygons <- readOGR(shp_folder, 'GRP_regions')
 
-foreach (n=c(1:nrow(region_polygons)), .inorder=FALSE,
+region_rows <- c(2, 3, 5)
+
+foreach (n=region_rows, .inorder=FALSE,
          .packages=c('raster', 'teamlucc', 'rgeos', 'gdalUtils',
                      'rgdal')) %dopar% {
     timestamp()
@@ -71,6 +73,8 @@ foreach (n=c(1:nrow(region_polygons)), .inorder=FALSE,
     aoi <- gBuffer(aoi, width=100000)
     aoi <- spTransform(aoi, CRS(s_srs))
     te <- as.numeric(bbox(aoi))
+
+    print(paste0("Processing ", region, "..."))
 
     # Round extent so that pixels are aligned properly
     te <- round(te*20)/20
@@ -93,3 +97,5 @@ foreach (n=c(1:nrow(region_polygons)), .inorder=FALSE,
             return(vals)
         }, filename=chirps_tif_masked, overwrite=TRUE)
 }
+
+stopCluster(cl)
