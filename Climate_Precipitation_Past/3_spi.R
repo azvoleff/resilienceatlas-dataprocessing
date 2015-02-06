@@ -71,13 +71,13 @@ for (n in region_rows) {
                                   '_', format(chirps_start_date, "%Y%m"), '-', 
                                   format(chirps_end_date, "%Y%m")))
 
-    chirps_tif_masked <- paste0(base_name, '_NAs_masked.tif')
+    chirps_tif <- paste0(base_name, '.tif')
 
     # Calculate the band numbers that are needed
     included_dates <- dates[(dates >= start_date) & (dates <= end_date)]
     band_nums <- c(1:length(dates))[(dates >= start_date) & (dates <= end_date)]
 
-    chirps <- stack(chirps_tif_masked, bands=band_nums)
+    chirps <- stack(chirps_tif, bands=band_nums)
 
     chirps_mat <- t(as.matrix(chirps))
 

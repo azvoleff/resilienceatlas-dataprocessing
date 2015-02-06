@@ -14,15 +14,15 @@ library(teamlucc)
 library(foreach)
 library(doParallel)
 
-n_cpus <- 4
+warp_threads <- 4
 
-cl  <- makeCluster(n_cpus)
+cl  <- makeCluster(3)
 registerDoParallel(cl)
 
 #dataset <- 'pentad'
 dataset <- 'monthly'
 
-in_folder <- file.path('E:/CHIRPS_Originals', paste0('global_', dataset))
+in_folder <- file.path('D:/CHIRPS_Originals', paste0('global_', dataset))
 out_folder <- file.path(prefix, "GRP", "CHIRPS")
 shp_folder <- file.path(prefix, "GRP", "Boundaries", "Regional")
 stopifnot(file_test("-d", shp_folder))
@@ -49,7 +49,7 @@ end_date <- datestrings[length(datestrings)]
 # computations won't take place until the gdalwarp line below that is run for 
 # each aoi)
 vrt_file <- extension(rasterTmpFile(), 'vrt')
-gdalbuildvrt(file.path(in_folder, '*.tif'), vrt_file, separate=TRUE, 
+gdalbuildvrt(file.path(in_folder, tifs), vrt_file, separate=TRUE, 
              overwrite=TRUE)
 
 # This is the projection of the CHIRPS files, read from the .hdr files 
@@ -85,17 +85,18 @@ foreach (n=region_rows, .inorder=FALSE,
 
     chirps_tif <- paste0(base_name, '.tif')
     # Crop tifs for this site
-    gdalwarp(vrt_file, chirps_tif, s_srs=s_srs, t_srs=s_srs, te=te,
-             multi=TRUE, wo=paste0("NUM_THREADS=", n_cpus), overwrite=TRUE)
+    chirps <- gdalwarp(vrt_file, chirps_tif, s_srs=s_srs, te=te, multi=TRUE, 
+                       wo=paste0("NUM_THREADS=", warp_threads), overwrite=TRUE, 
+                       output_Raster=TRUE)
 
-    chirps <- brick(chirps_tif)
-
-    chirps_NA_value <- -9999
-    chirps_tif_masked <- paste0(base_name, '_NAs_masked.tif')
-    chirps <- calc(chirps, function(vals) {
-            vals[vals == chirps_NA_value] <- NA
-            return(vals)
-        }, filename=chirps_tif_masked, overwrite=TRUE)
+    ## Below is not needed with latest TIFs - they appear not to have an NA 
+    ## code
+    # chirps_NA_value <- -9999
+    # chirps_tif_masked <- paste0(base_name, '_NAs_masked.tif')
+    # chirps <- calc(chirps, function(vals) {
+    #         vals[vals == chirps_NA_value] <- NA
+    #         return(vals)
+    #     }, filename=chirps_tif_masked, overwrite=TRUE)
 }
 
 stopCluster(cl)

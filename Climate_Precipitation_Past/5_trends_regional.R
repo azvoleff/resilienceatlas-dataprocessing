@@ -62,16 +62,15 @@ foreach (n=region_rows, .inorder=FALSE,
     
 
     base_name <- file.path(out_folder, paste0(region, '_CHIRPS'))
-    chirps_tif_masked <- paste0(base_name, "_", dataset, '_', 
+    chirps_tif <- paste0(base_name, "_", dataset, '_', 
                                 format(chirps_start_date, "%Y%m"), '-', 
-                                format(chirps_end_date, "%Y%m"), 
-                                '_NAs_masked.tif')
+                                format(chirps_end_date, "%Y%m"), '.tif')
 
     # Calculate the band numbers that are needed
     included_dates <- dates[(dates >= start_date) & (dates <= end_date)]
     band_nums <- c(1:length(dates))[(dates >= start_date) & (dates <= end_date)]
 
-    chirps <- stack(chirps_tif_masked, bands=band_nums)
+    chirps <- stack(chirps_tif, bands=band_nums)
 
     # Setup a dataframe with the precipitation data so anomalies, etc. can be 
     # calculated
