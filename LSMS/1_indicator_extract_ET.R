@@ -433,11 +433,24 @@ buff_quants$mean_dep_ratio <- rev_index(buff_quants$mean_dep_ratio)
 
 buff_score <- calc_score(buff_quants, 'buff_score')
 
+
+buff_score$region <- NA
+buff_score$region <- sect3_pp_w1$saq01[match(buff_score$ea_id, sect3_pp_w1$ea_id)]
+
+# Only representative for Amhara, Oromiya, SNNP, and Tigray
+buff_score$region <- as.character(buff_score$region)
+buff_score$region[!(buff_score$region %in% c("Amhara", "Oromiya", "SNNP", "Tigray"))] <- "Other"
+
+# Aggregate buffer capacity score by region
+buff_score <- group_by(buff_score, region) %>%
+    summarize(buff_score=mean(buff_score, na.rm=TRUE))
+write.csv(buff_score, file='ET_buff_score.csv', row.names=FALSE)
+
 ##########################
 # Self-organization
 
 # Farm inputs
-buff_input_stats <- group_by(indiv, ea_id, household_id) %>%
+selforg_input_stats <- group_by(indiv, ea_id, household_id) %>%
     summarize(crop_rotation=sum(hldr_crop_rotation, na.rm=TRUE)/sum(!is.na(hldr_crop_rotation)),
               chem_fert=sum(hldr_chem_fert, na.rm=TRUE)/sum(!is.na(hldr_chem_fert)),
               ext=sum(hldr_ext, na.rm=TRUE)/sum(!is.na(hldr_ext)),
