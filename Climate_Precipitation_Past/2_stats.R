@@ -20,46 +20,67 @@ product <- 'v1p8chirps'
 
 # For monthly data:
 dataset <- 'monthly' # For SPI, use monthly
-date_limits_string <- '198101-201404'
-
-# Note the below code is INCLUSIVE of the start date
-chirps_start_date <- as.Date('1981/1/1')
-# Note the below code is EXCLUSIVE of the end date
-chirps_end_date <- as.Date('2014/5/1')
 
 in_folder <- file.path(prefix, "GRP", "CHIRPS")
 out_folder <- file.path(prefix, "GRP", "CHIRPS")
+shp_folder <- file.path(prefix, "GRP", "Boundaries", "Regional")
 stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
+stopifnot(file_test('-d', shp_folder))
 
+# Note the below code is INCLUSIVE of the start date
+chirps_start_date <- as.Date('1981/1/1')
+# Note the below code is INCLUSIVE of the end date
+chirps_end_date <- as.Date('2014/12/1')
 yrs <- seq(year(chirps_start_date), year(chirps_end_date))
 dates <- seq(chirps_start_date, chirps_end_date, by='months')
-dates <- dates[dates < chirps_end_date]
-num_periods <- 12
+periods_per_year <- 12
+
+# Select the start and end dates for the data to include in this analysis
+start_date <- as.Date('1985/1/1') # Inclusive
+end_date <- as.Date('2014/12/1') # Exclusive
 
 # This is the projection of the CHIRPS files, read from the .hdr files 
 # accompanying the data
 s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
 
-ISO_2s <- c("ET", "DJ", "SO", "ER")
+region_polygons <- readOGR(shp_folder, 'GRP_regions')
 
-foreach (ISO_2=ISO_2s,
-         .packages=c("rgdal", "lubridate", "dplyr", "raster")) %dopar% {
+region_rows <- c(2, 3, 5)
+
+foreach (n=region_rows, .inorder=FALSE,
+         .packages=c('raster', 'rgeos', 'dplyr', 'lubridate',
+                     'rgdal')) %dopar% {
     timestamp()
-    message('Processing ', ISO_2, '...')
+    aoi <- region_polygons[n, ]
+    region <- as.character(aoi$Region)
+    region <- gsub(' ', '', region)
 
-    filename_base <- paste0(ISO_2, '_', product, '_', dataset, '_')
+    print(paste0("Processing ", region, "..."))
 
-    chirps_tif_masked <- file.path(out_folder,
-                            paste0(filename_base, date_limits_string, 
-                                   '_NAs_masked.tif'))
-    chirps <- brick(chirps_tif_masked)
+    in_basename <- file.path(in_folder, paste0(region, '_CHIRPS'))
+
+    out_basename <- file.path(out_folder, paste0(region, '_CHIRPS_',
+                                format(start_date, "%Y%m"), '-', 
+                                format(end_date, "%Y%m")))
+                                  
+    chirps_tif_masked <- paste0(in_basename, "_", dataset, '_', 
+                                format(chirps_start_date, "%Y%m"), '-', 
+                                format(chirps_end_date, "%Y%m"), 
+                                '_NAs_masked.tif')
+
+
+    # Calculate the band numbers that are needed
+    included_dates <- dates[(dates >= start_date) & (dates <= end_date)]
+    band_nums <- c(1:length(dates))[(dates >= start_date) & (dates <= end_date)]
+
+    chirps <- stack(chirps_tif_masked, bands=band_nums)
 
     # Setup a dataframe with the precipitation data so anomalies, etc can be 
     # calculated
-    years <- rep(yrs, each=num_periods)[1:nlayers(chirps)]
+    years <- year(included_dates)
     years_rep <- rep(years, each=nrow(chirps)*ncol(chirps))
-    subyears <- rep(seq(1, num_periods),  length.out=nlayers(chirps))
+    subyears <- rep(seq(1, periods_per_year),  length.out=nlayers(chirps))
     subyears_rep <- rep(subyears, each=nrow(chirps)*ncol(chirps))
     pixels_rep <- rep(seq(1:(nrow(chirps)*ncol(chirps))), nlayers(chirps))
     chirps_df <- data.frame(year=years_rep,
@@ -79,14 +100,13 @@ foreach (ISO_2=ISO_2s,
     ppt_mean_monthly <- group_by(chirps_df, pixel, subyear) %>%
         summarize(mean_monthly=mean(ppt, na.rm=TRUE))
     # Use chirps raster as a template
-    ppt_mean_monthly_rast <- brick(chirps, values=FALSE, nl=num_periods)
+    ppt_mean_monthly_rast <- brick(chirps, values=FALSE, nl=periods_per_year)
     ppt_mean_monthly_rast <- setValues(ppt_mean_monthly_rast,
                                matrix(ppt_mean_monthly$mean_monthly, 
                                       nrow=nrow(chirps)*ncol(chirps), 
-                                      ncol=num_periods, byrow=TRUE))
+                                      ncol=periods_per_year, byrow=TRUE))
     writeRaster(ppt_mean_monthly_rast,
-                filename=file.path(out_folder, paste0(filename_base, 
-                                                      'ppt_mean_monthly.tif')), 
+                filename=paste0(out_basename, '_ppt_mean_monthly.tif'), 
                 overwrite=TRUE)
 
     # Calculate the mean annual precipitation for each pixel
@@ -101,30 +121,14 @@ foreach (ISO_2=ISO_2s,
                                       nrow=nrow(chirps)*ncol(chirps), 
                                       ncol=1))
     writeRaster(ppt_mean_12mth_rast,
-                filename=file.path(out_folder, paste0(filename_base, 
-                                                      'ppt_mean_12mth.tif')), 
-                overwrite=TRUE)
-
-    # Calculate the mean annual precipitation for each pixel
-    ppt_mean_24mth <- ppt_mean_12mth
-    ppt_mean_24mth$mean_24mth <- ppt_mean_24mth$mean_annual * 2
-    ppt_mean_24mth <- ppt_mean_24mth[names(ppt_mean_24mth) != "mean_annual"]
-    # Use chirps raster as a template
-    ppt_mean_24mth_rast <- brick(chirps, values=FALSE, nl=1)
-    ppt_mean_24mth_rast <- setValues(ppt_mean_24mth_rast,
-                               matrix(ppt_mean_24mth$mean_24mth, 
-                                      nrow=nrow(chirps)*ncol(chirps), 
-                                      ncol=1))
-    writeRaster(ppt_mean_24mth_rast,
-                filename=file.path(out_folder, paste0(filename_base, 
-                                                      'ppt_mean_24mth.tif')), 
+                filename=paste0(out_basename, '_ppt_rollmean_12mth.tif'), 
                 overwrite=TRUE)
 
     chirps_df$anom_12mth <- chirps_df$tot_12mth - ppt_mean_12mth$mean_annual[match(chirps_df$pixel, ppt_mean_12mth$pixel)]
     chirps_df$anom_24mth <- chirps_df$tot_24mth - ppt_mean_24mth$mean_24mth[match(chirps_df$pixel, ppt_mean_24mth$pixel)]
     #filter(chirps_df, pixel == 1)[1:36,]
 
-    save(chirps_df, file=file.path(out_folder, paste0(filename_base, 'ppt.RData')))
+    save(chirps_df, file=paste0(out_basename, '_ppt.RData'))
 
     # Save rasters of 12 and 24 month anomalies
     anom_12mth_rast <- brick(chirps, values=FALSE, nl=nlayers(chirps))
@@ -132,8 +136,7 @@ foreach (ISO_2=ISO_2s,
                                  matrix(chirps_df$anom_12mth, 
                                         nrow=nrow(chirps)*ncol(chirps), 
                                         ncol=nlayers(chirps)))
-    anom_12mth_rast_filename <- file.path(out_folder,
-                                          paste0(filename_base, '12mth_anom.tif'))
+    anom_12mth_rast_filename <- paste0(out_basename, '_ppt_anom_12mth.tif')
     writeRaster(anom_12mth_rast, anom_12mth_rast_filename, overwrite=TRUE)
 
     anom_24mth_rast <- brick(chirps, values=FALSE, nl=nlayers(chirps))
@@ -141,7 +144,6 @@ foreach (ISO_2=ISO_2s,
                                  matrix(chirps_df$anom_24mth, 
                                         nrow=nrow(chirps)*ncol(chirps), 
                                         ncol=nlayers(chirps)))
-    anom_24mth_rast_filename <- file.path(out_folder,
-                                          paste0(filename_base, '24mth_anom.tif'))
+    anom_24mth_rast_filename <- paste0(out_basename, '_ppt_anom_24mth.tif')
     writeRaster(anom_24mth_rast, anom_24mth_rast_filename, overwrite=TRUE)
 }

@@ -11,8 +11,6 @@ library(doParallel)
 
 n_cpus <- 20
 
-ISO_2s <- c("ET", "DJ", "SO", "ER")
-
 cl  <- makeCluster(n_cpus)
 registerDoParallel(cl)
 
@@ -22,11 +20,24 @@ out_folder <- file.path(prefix, "GRP", "CHIRPS")
 product <- 'v1p8chirps'
 
 dataset <- 'monthly' # For SPI, use monthly
-date_limits_string <- '198101-201404'
+
+# Note the below code is INCLUSIVE of the start date
+chirps_start_date <- as.Date('1981/1/1')
+# Note the below code is INCLUSIVE of the end date
+chirps_end_date <- as.Date('2014/12/1')
+yrs <- seq(year(chirps_start_date), year(chirps_end_date))
+dates <- seq(chirps_start_date, chirps_end_date, by='months')
+periods_per_year <- 12
+
+# Select the start and end dates for the data to include in this analysis
+start_date <- as.Date('1985/1/1') # Inclusive
+end_date <- as.Date('2014/12/1') # Exclusive
 
 stopifnot(dataset == "monthly")
 
-spi_periods <- c(24, 36, 12)
+region_polygons <- readOGR(shp_folder, 'GRP_regions')
+
+region_rows <- c(2, 3, 5)
 
 # Define function to calculate SPI
 calc_spi <- function(chirps_mat, spi_period) {
@@ -46,16 +57,28 @@ calc_spi <- function(chirps_mat, spi_period) {
     return(spi_mat)
 }
 
-for (ISO_2 in ISO_2s) {
+for (n in region_rows) {
     timestamp()
-    message('Processing ', ISO_2, '...')
+    timestamp()
+    aoi <- region_polygons[n, ]
+    region <- as.character(aoi$Region)
+    region <- gsub(' ', '', region)
 
-    filename_base <- paste0(ISO_2, '_', product, '_', dataset, '_')
+    print(paste0("Processing ", region, "..."))
 
-    chirps_tif_masked <- file.path(out_folder,
-                            paste0(filename_base, date_limits_string, 
-                                   '_NAs_masked.tif'))
-    chirps <- brick(chirps_tif_masked)
+    base_name <- file.path(out_folder,
+                           paste0(region, '_CHIRPS_', dataset,
+                                  '_', format(chirps_start_date, "%Y%m"), '-', 
+                                  format(chirps_end_date, "%Y%m")))
+
+    chirps_tif_masked <- paste0(base_name, '_NAs_masked.tif')
+
+    # Calculate the band numbers that are needed
+    included_dates <- dates[(dates >= start_date) & (dates <= end_date)]
+    band_nums <- c(1:length(dates))[(dates >= start_date) & (dates <= end_date)]
+
+    chirps <- stack(chirps_tif_masked, bands=band_nums)
+
     chirps_mat <- t(as.matrix(chirps))
 
     for (spi_period in spi_periods) {

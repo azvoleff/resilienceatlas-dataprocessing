@@ -4,13 +4,7 @@
 
 source('../0_settings.R')
 
-library(rgdal)
 library(raster)
-library(lubridate)
-library(dplyr)
-library(rgeos)
-library(teamlucc)
-library(foreach)
 library(doParallel)
 library(spatial.tools)
 
@@ -63,7 +57,8 @@ foreach (n=region_rows, .inorder=FALSE,
     message('Processing ', region, '...')
 
     base_name <- file.path(out_folder, paste0(region, '_CHIRPS_', dataset))
-    chirps_tif_masked <- paste0(base_name, '_', start_date, '-', end_date, '_NAs_masked.tif')
+    chirps_tif_masked <- paste0(base_name, '_', start_date, '-', end_date, 
+                                '_NAs_masked.tif')
     chirps <- brick(chirps_tif_masked)
 
     # Setup a dataframe with the precipitation data so anomalies, etc. can be 
