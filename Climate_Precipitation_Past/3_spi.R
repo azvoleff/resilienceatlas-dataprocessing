@@ -9,15 +9,13 @@ library(SPEI)
 library(foreach)
 library(doParallel)
 
-n_cpus <- 20
+n_cpus <- 12
 
 cl  <- makeCluster(n_cpus)
 registerDoParallel(cl)
 
 in_folder <- file.path(prefix, "GRP", "CHIRPS")
 out_folder <- file.path(prefix, "GRP", "CHIRPS")
-
-product <- 'v1p8chirps'
 
 dataset <- 'monthly' # For SPI, use monthly
 
