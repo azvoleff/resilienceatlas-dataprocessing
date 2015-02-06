@@ -15,10 +15,9 @@ library(doParallel)
 # registerDoParallel(cl)
 
 
-# For monthly data:
-dataset <- 'monthly' # For SPI, use monthly
-
 ###### TEMPORARY
+# # For monthly data:
+# dataset <- 'monthly' # For SPI, use monthly
 dataset <- 'v1p8chirps_monthly' # For SPI, use monthly
 ###### TEMPORARY
 
@@ -49,10 +48,6 @@ periods_per_year <- 12
 start_date <- as.Date('1984/1/1')
 end_date <- as.Date('2013/12/1')
 ###### TEMPORARY
-
-# This is the projection of the CHIRPS files, read from the .hdr files 
-# accompanying the data
-s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
 
 region_polygons <- readOGR(shp_folder, 'GRP_regions')
 
@@ -105,8 +100,7 @@ foreach (n=region_rows, .inorder=FALSE,
     # month total as of that date
     chirps_df <- group_by(chirps_df, pixel) %>%
         arrange(year, subyear) %>%
-        mutate(tot_12mth=as.numeric(stats::filter(ppt, rep(1/12, 12), sides=1)*12),
-               tot_24mth=as.numeric(stats::filter(ppt, rep(1/24, 24), sides=1)*24))
+        mutate(tot_12mth=as.numeric(stats::filter(ppt, rep(1/12, 12), sides=1)*12))
 
     # Calculate the mean_monthly for each subyear for each pixel
     ppt_mean_monthly <- group_by(chirps_df, pixel, subyear) %>%
@@ -137,12 +131,11 @@ foreach (n=region_rows, .inorder=FALSE,
                 overwrite=TRUE)
 
     chirps_df$anom_12mth <- chirps_df$tot_12mth - ppt_mean_12mth$mean_annual[match(chirps_df$pixel, ppt_mean_12mth$pixel)]
-    chirps_df$anom_24mth <- chirps_df$tot_24mth - ppt_mean_24mth$mean_24mth[match(chirps_df$pixel, ppt_mean_24mth$pixel)]
     #filter(chirps_df, pixel == 1)[1:36,]
 
     save(chirps_df, file=paste0(out_basename, '_ppt.RData'))
 
-    # Save rasters of 12 and 24 month anomalies
+    # Save rasters of 12 month anomalies
     anom_12mth_rast <- brick(chirps, values=FALSE, nl=nlayers(chirps))
     anom_12mth_rast <- setValues(anom_12mth_rast,
                                  matrix(chirps_df$anom_12mth, 
@@ -150,15 +143,6 @@ foreach (n=region_rows, .inorder=FALSE,
                                         ncol=nlayers(chirps)))
     anom_12mth_rast_filename <- paste0(out_basename, '_ppt_anom_12mth.tif')
     writeRaster(anom_12mth_rast, filename=anom_12mth_rast_filename, 
-                overwrite=TRUE)
-
-    anom_24mth_rast <- brick(chirps, values=FALSE, nl=nlayers(chirps))
-    anom_24mth_rast <- setValues(anom_24mth_rast,
-                                 matrix(chirps_df$anom_24mth, 
-                                        nrow=nrow(chirps)*ncol(chirps), 
-                                        ncol=nlayers(chirps)))
-    anom_24mth_rast_filename <- paste0(out_basename, '_ppt_anom_24mth.tif')
-    writeRaster(anom_24mth_rast, filename=anom_24mth_rast_filename, 
                 overwrite=TRUE)
 
     return(TRUE)

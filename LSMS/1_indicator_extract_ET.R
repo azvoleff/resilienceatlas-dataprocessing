@@ -397,7 +397,9 @@ rev_index <- function(x) {
 }
 
 calc_score <- function(x, name) {
-    raw_score <- apply(select(x, -ea_id), 1, sum)
+    # Subtract 1 so the scores will range from 0-10
+    raw_score <- select(x, -ea_id) - 1
+    raw_score <- apply(raw_score, 1, sum)
     score <- raw_score / max(raw_score) * 10
     score <- data.frame(x$ea_id, score)
     names(score) <- c("ea_id", name)
@@ -425,7 +427,7 @@ buff_stats <- buff_stats[-nrow(buff_stats), ]
 
 buff_quants <- ungroup(buff_stats) %>%
     select(-job_perm_any) %>%
-    mutate_each(funs(as.integer(cut(., quantile(., c(0, .33, .666, 1), na.rm=TRUE),
+    mutate_each(funs(as.numeric(cut(., quantile(., c(0, .25, .5, .75, 1), na.rm=TRUE),
                                     include.lowest=TRUE))), -ea_id)
 
 # Reverse the order of mean_dep_ratio - higher is less resilient
@@ -433,17 +435,19 @@ buff_quants$mean_dep_ratio <- rev_index(buff_quants$mean_dep_ratio)
 
 buff_score <- calc_score(buff_quants, 'buff_score')
 
-
 buff_score$region <- NA
 buff_score$region <- sect3_pp_w1$saq01[match(buff_score$ea_id, sect3_pp_w1$ea_id)]
+buff_score$rural <- NA
+buff_score$rural <- sect3_pp_w1$rural[match(buff_score$ea_id, sect3_pp_w1$ea_id)]
 
 # Only representative for Amhara, Oromiya, SNNP, and Tigray
 buff_score$region <- as.character(buff_score$region)
 buff_score$region[!(buff_score$region %in% c("Amhara", "Oromiya", "SNNP", "Tigray"))] <- "Other"
 
 # Aggregate buffer capacity score by region
-buff_score <- group_by(buff_score, region) %>%
+buff_score <- group_by(buff_score, region, rural) %>%
     summarize(buff_score=mean(buff_score, na.rm=TRUE))
+ggplot(buff_score) + geom_bar(aes(region, buff_score, fill=rural), position="dodge", stat="identity")
 write.csv(buff_score, file='ET_buff_score.csv', row.names=FALSE)
 
 ##########################
