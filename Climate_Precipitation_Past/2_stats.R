@@ -57,11 +57,11 @@ s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
 region_polygons <- readOGR(shp_folder, 'GRP_regions')
 
 #region_rows <- c(2, 3, 5)
-region_rows <- c(3, 5)
+region_rows <- c(5)
 
 foreach (n=region_rows, .inorder=FALSE,
          .packages=c('raster', 'rgeos', 'dplyr', 'lubridate',
-                     'rgdal')) %dopar% {
+                     'rgdal')) %do% {
     timestamp()
     aoi <- region_polygons[n, ]
     region <- as.character(aoi$Region)
