@@ -22,7 +22,7 @@ registerDoParallel(cl)
 #dataset <- 'pentad'
 dataset <- 'monthly'
 
-in_folder <- file.path('D:/CHIRPS_Originals', paste0('global_', dataset))
+in_folder <- file.path(prefix, "CHIRPS", paste0('global_', dataset))
 out_folder <- file.path(prefix, "GRP", "CHIRPS")
 shp_folder <- file.path(prefix, "GRP", "Boundaries", "Regional")
 stopifnot(file_test("-d", shp_folder))
@@ -97,6 +97,8 @@ foreach (n=region_rows, .inorder=FALSE,
     #         vals[vals == chirps_NA_value] <- NA
     #         return(vals)
     #     }, filename=chirps_tif_masked, overwrite=TRUE)
+
+    return(TRUE)
 }
 
 stopCluster(cl)
