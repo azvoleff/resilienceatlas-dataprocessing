@@ -5,22 +5,13 @@
 source('../0_settings.R')
 
 library(raster)
-library(doParallel)
 library(spatial.tools)
+library(lubridate)
 
-n_cpus <- 3
-
-cl  <- makeCluster(n_cpus)
-registerDoParallel(cl)
-
-# For monthly data:
-dataset <- 'monthly' # For SPI, use monthly
-date_limits_string <- '198101-201404'
-
-# Note the below code is INCLUSIVE of the start date
-chirps_start_date <- as.Date('1981/1/1')
-# Note the below code is EXCLUSIVE of the end date
-chirps_end_date <- as.Date('2015/1/1')
+###### TEMPORARY
+# # For monthly data:
+# dataset <- 'monthly' # For SPI, use monthly
+dataset <- 'v1p8chirps_monthly' # For SPI, use monthly
 
 in_folder <- file.path(prefix, "GRP", "CHIRPS")
 out_folder <- file.path(prefix, "GRP", "CHIRPS")
@@ -29,17 +20,26 @@ stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
 stopifnot(file_test('-d', shp_folder))
 
+###### TEMPORARY
+# # Note the below code is INCLUSIVE of the start date
+# chirps_start_date <- as.Date('1981/1/1')
+# # Note the below code is INCLUSIVE of the end date
+# chirps_end_date <- as.Date('2014/12/1')
+chirps_start_date <- as.Date('1981/1/1')
+chirps_end_date <- as.Date('2014/4/1')
+###### TEMPORARY
+
 yrs <- seq(year(chirps_start_date), year(chirps_end_date))
 dates <- seq(chirps_start_date, chirps_end_date, by='months')
-dates <- dates[dates < chirps_end_date]
-num_periods <- 12
+periods_per_year <- 12
 
-start_date <- format(dates[1], '%Y%m')
-end_date <- format(dates[length(dates)], '%Y%m')
-
-# This is the projection of the CHIRPS files, read from the .hdr files 
-# accompanying the data
-s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
+###### TEMPORARY
+# # Select the start and end dates for the data to include in this analysis
+# start_date <- as.Date('1985/1/1') # Inclusive
+# end_date <- as.Date('2014/12/1') # Exclusive
+start_date <- as.Date('1984/1/1')
+end_date <- as.Date('2013/12/1')
+###### TEMPORARY
 
 region_polygons <- readOGR(shp_folder, 'GRP_regions')
 
@@ -47,7 +47,7 @@ region_rows <- c(2, 3, 5)
 
 foreach (n=region_rows, .inorder=FALSE,
          .packages=c("rgdal", "lubridate", "dplyr", "raster",
-                     "rgeos", "teamlucc")) %dopar% {
+                     "rgeos", "teamlucc")) %do% {
     timestamp()
 
     aoi <- region_polygons[n, ]
@@ -56,62 +56,80 @@ foreach (n=region_rows, .inorder=FALSE,
 
     message('Processing ', region, '...')
 
-    base_name <- file.path(out_folder, paste0(region, '_CHIRPS_', dataset))
-    chirps_tif <- paste0(base_name, '_', start_date, '-', end_date, '.tif')
-    chirps <- brick(chirps_tif)
+    out_basename <- file.path(out_folder, paste0(region, '_CHIRPS_',
+                                format(start_date, "%Y%m"), '-', 
+                                format(end_date, "%Y%m")))
 
-    # Setup a dataframe with the precipitation data so anomalies, etc. can be 
-    # calculated
-    years <- rep(yrs, each=num_periods)[1:nlayers(chirps)]
-    years_rep <- rep(years, each=nrow(chirps)*ncol(chirps))
-    subyears <- rep(seq(1, num_periods),  length.out=nlayers(chirps))
-    subyears_rep <- rep(subyears, each=nrow(chirps)*ncol(chirps))
-    pixels_rep <- rep(seq(1:(nrow(chirps)*ncol(chirps))), nlayers(chirps))
-    chirps_df <- data.frame(year=years_rep,
-                            subyear=subyears_rep, 
-                            pixel=pixels_rep,
-                            ppt=as.vector(chirps))
-    chirps_df <- tbl_df(chirps_df)
+    ##########################################################################
+    # Recode annual mean precipitation
+    annual_mean_ppt_rclmat <- matrix(c(-Inf, 0, -1,
+                                       0, 250, 0,
+                                       250, 500, 1,
+                                       500, 750, 2,
+                                       750, 1000, 3,
+                                       1000, 1250, 4,
+                                       1250, 1500, 5,
+                                       1500, 2000, 6,
+                                       2000, 2500, 7,
+                                       2000, 3000, 8,
+                                       3000, Inf, 9), ncol=3, byrow=TRUE)
+    annual_mean_ppt_file <- paste0(out_basename, '_ppt_mean_12mth.tif')
+    annual_mean_ppt <- raster(annual_mean_ppt_file)
+    annual_mean_ppt_reclass <- reclassify(annual_mean_ppt, annual_mean_ppt_rclmat)
 
-    # Map areas that are getting signif. wetter or drier, coded by mm per year
-    extract_coefs <- function(model) {
-        d <- data.frame(summary(model)$coefficients[, c(1, 4)])
-        d <- cbind(row.names(d), d)
-        names(d) <- c('coef', 'estimate', 'p_val')
-        row.names(d) <- NULL
-        return(d)
-    }
-    annual_ppt_lm_coefs <- group_by(chirps_df, year, pixel) %>%
-        summarize(ppt_annual=sum(ppt, na.rm=TRUE)) %>%
-        group_by(pixel) %>%
-        do(extract_coefs(lm(ppt_annual ~ year, data=.)))
+    annual_mean_ppt_rcldf <- data.frame(annual_mean_ppt_rclmat)
+    annual_mean_ppt_rcldf [1, 1:2] <- NA
+    names(annual_mean_ppt_rcldf) <- c("lowvalue", "highvalue", "code")
 
-    # Use chirps raster as a template
-    annual_ppt_slope_rast <- brick(chirps, values=FALSE, nl=1)
-    annual_ppt_slope_rast <- setValues(annual_ppt_slope_rast,
-                               matrix(filter(annual_ppt_lm_coefs, coef == "year")$estimate, 
-                                      nrow=nrow(chirps)*ncol(chirps), 
-                                      ncol=1, byrow=TRUE))
-    annual_ppt_slope_rast <- writeRaster(annual_ppt_slope_rast,
-                filename=paste0(base_name, 'annual_ppt_slope.tif'), 
+    annual_mean_ppt_classifed_file <- paste0(out_basename, '_ppt_mean_12mth_classified.tif')
+    annual_mean_ppt_classes_file <- paste0(out_basename, '_ppt_mean_12mth_classified_classkey.csv')
+    write.csv(annual_mean_ppt_rcldf, file=annual_mean_ppt_classes_file, 
+              row.names=FALSE)
+    writeRaster(annual_mean_ppt_reclass, 
+                filename=annual_mean_ppt_classifed_file, overwrite=TRUE)
+
+    ##########################################################################
+    ### Temporarily use an alternate data source for pvalues and trends
+    ##########################################################################
+    out_basename <- file.path(out_folder, paste0(region, '_v1p8chirps_monthly'))
+
+    ##########################################################################
+    # Recode annual mean precipitation
+    annual_ppt_slope <- raster(paste0(out_basename, '_annual_ppt_slope_masked.tif'))
+    annual_ppt_p_val <- raster(paste0(out_basename, '_annual_ppt_pval.tif'))
+
+    # Convert to mm per decade
+    annual_ppt_slope <- annual_ppt_slope * 10
+
+    # Convert to percentage of current mean rainfall (while ignoring mean 
+    # rainfall less than one, which is missing data)
+    annual_ppt_slope <- annual_ppt_slope / (annual_mean_ppt * (annual_mean_ppt > 0))
+
+    # Drop insignificant trends
+    annual_ppt_slope <- annual_ppt_slope * (annual_ppt_p_val <.05)
+
+    annual_ppt_slope_rclmat <- matrix(c(-Inf, -.1, 0,
+                                        -.1, -.05, 1,
+                                        -.05, 0, 2,
+                                        0, .05, 3,
+                                        .05, .1, 4,
+                                        .1, Inf, 5), ncol=3, byrow=TRUE)
+    annual_ppt_slope_reclass <- reclassify(annual_ppt_slope, annual_ppt_slope_rclmat)
+
+    # Code NA values
+    annual_ppt_slope_reclass[is.na(annual_ppt_slope_reclass )] <- -1
+
+    annual_ppt_slope_rcldf <- data.frame(annual_ppt_slope_rclmat)
+    names(annual_ppt_slope_rcldf) <- c("lowvalue", "highvalue", "code")
+
+    annual_ppt_slope_classifed_file <- paste0(out_basename, '_ppt_10yrslope_classified.tif')
+    annual_ppt_slope_classes_file <- paste0(out_basename, '_ppt_10yrslope_classified_classkey.csv')
+    write.csv(annual_ppt_slope_rcldf, file=annual_ppt_slope_classes_file, 
+              row.names=FALSE)
+    writeRaster(annual_ppt_slope_reclass, filename=annual_ppt_slope_classifed_file,
                 overwrite=TRUE)
 
-    annual_ppt_p_val_rast <- brick(chirps, values=FALSE, nl=1)
-    annual_ppt_p_val_rast <- setValues(annual_ppt_p_val_rast,
-                               matrix(filter(annual_ppt_lm_coefs, coef == "year")$p_val, 
-                                      nrow=nrow(chirps)*ncol(chirps), 
-                                      ncol=1, byrow=TRUE))
-    annual_ppt_p_val_rast <- writeRaster(annual_ppt_p_val_rast,
-                filename=paste0(base_name, 'annual_ppt_pval.tif'), 
-                overwrite=TRUE)
+    ##########################################################################
 
-    annual_ppt_slope_rast <- overlay(annual_ppt_slope_rast, annual_ppt_p_val_rast,
-        fun=function(slp, p) {
-            return(slp * (p < .05))
-        },
-        filename=paste0(base_name, 'annual_ppt_slope_masked.tif'),
-        overwrite=TRUE)
-
+    return(TRUE)
 }
-
-stopCluster(cl)
