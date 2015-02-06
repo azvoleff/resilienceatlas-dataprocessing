@@ -11,15 +11,16 @@ library(dplyr)
 library(foreach)
 library(doParallel)
 
-n_cpus <- 4
+# cl  <- makeCluster(3)
+# registerDoParallel(cl)
 
-cl  <- makeCluster(n_cpus)
-registerDoParallel(cl)
-
-product <- 'v1p8chirps'
 
 # For monthly data:
 dataset <- 'monthly' # For SPI, use monthly
+
+###### TEMPORARY
+dataset <- 'v1p8chirps_monthly' # For SPI, use monthly
+###### TEMPORARY
 
 in_folder <- file.path(prefix, "GRP", "CHIRPS")
 out_folder <- file.path(prefix, "GRP", "CHIRPS")
@@ -28,17 +29,26 @@ stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
 stopifnot(file_test('-d', shp_folder))
 
-# Note the below code is INCLUSIVE of the start date
+###### TEMPORARY
+# # Note the below code is INCLUSIVE of the start date
+# chirps_start_date <- as.Date('1981/1/1')
+# # Note the below code is INCLUSIVE of the end date
+# chirps_end_date <- as.Date('2014/12/1')
 chirps_start_date <- as.Date('1981/1/1')
-# Note the below code is INCLUSIVE of the end date
-chirps_end_date <- as.Date('2014/12/1')
+chirps_end_date <- as.Date('2014/4/1')
+###### TEMPORARY
+
 yrs <- seq(year(chirps_start_date), year(chirps_end_date))
 dates <- seq(chirps_start_date, chirps_end_date, by='months')
 periods_per_year <- 12
 
-# Select the start and end dates for the data to include in this analysis
-start_date <- as.Date('1985/1/1') # Inclusive
-end_date <- as.Date('2014/12/1') # Exclusive
+###### TEMPORARY
+# # Select the start and end dates for the data to include in this analysis
+# start_date <- as.Date('1985/1/1') # Inclusive
+# end_date <- as.Date('2014/12/1') # Exclusive
+start_date <- as.Date('1984/1/1')
+end_date <- as.Date('2013/12/1')
+###### TEMPORARY
 
 # This is the projection of the CHIRPS files, read from the .hdr files 
 # accompanying the data
@@ -46,7 +56,8 @@ s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
 
 region_polygons <- readOGR(shp_folder, 'GRP_regions')
 
-region_rows <- c(2, 3, 5)
+#region_rows <- c(2, 3, 5)
+region_rows <- c(3, 5)
 
 foreach (n=region_rows, .inorder=FALSE,
          .packages=c('raster', 'rgeos', 'dplyr', 'lubridate',
@@ -58,7 +69,10 @@ foreach (n=region_rows, .inorder=FALSE,
 
     print(paste0("Processing ", region, "..."))
 
-    in_basename <- file.path(in_folder, paste0(region, '_CHIRPS'))
+    ###### TEMPORARY
+    in_basename <- file.path(in_folder, paste0(region, ''))
+    #in_basename <- file.path(in_folder, paste0(region, '_CHIRPS'))
+    ###### TEMPORARY
 
     out_basename <- file.path(out_folder, paste0(region, '_CHIRPS_',
                                 format(start_date, "%Y%m"), '-', 
@@ -67,7 +81,6 @@ foreach (n=region_rows, .inorder=FALSE,
     chirps_tif <- paste0(in_basename, "_", dataset, '_', 
                          format(chirps_start_date, "%Y%m"), '-', 
                          format(chirps_end_date, "%Y%m"), '.tif')
-
 
     # Calculate the band numbers that are needed
     included_dates <- dates[(dates >= start_date) & (dates <= end_date)]
@@ -120,7 +133,7 @@ foreach (n=region_rows, .inorder=FALSE,
                                       nrow=nrow(chirps)*ncol(chirps), 
                                       ncol=1))
     writeRaster(ppt_mean_12mth_rast,
-                filename=paste0(out_basename, '_ppt_rollmean_12mth.tif'), 
+                filename=paste0(out_basename, '_ppt_mean_12mth.tif'), 
                 overwrite=TRUE)
 
     chirps_df$anom_12mth <- chirps_df$tot_12mth - ppt_mean_12mth$mean_annual[match(chirps_df$pixel, ppt_mean_12mth$pixel)]
@@ -136,7 +149,8 @@ foreach (n=region_rows, .inorder=FALSE,
                                         nrow=nrow(chirps)*ncol(chirps), 
                                         ncol=nlayers(chirps)))
     anom_12mth_rast_filename <- paste0(out_basename, '_ppt_anom_12mth.tif')
-    writeRaster(anom_12mth_rast, anom_12mth_rast_filename, overwrite=TRUE)
+    writeRaster(anom_12mth_rast, filename=anom_12mth_rast_filename, 
+                overwrite=TRUE)
 
     anom_24mth_rast <- brick(chirps, values=FALSE, nl=nlayers(chirps))
     anom_24mth_rast <- setValues(anom_24mth_rast,
@@ -144,5 +158,8 @@ foreach (n=region_rows, .inorder=FALSE,
                                         nrow=nrow(chirps)*ncol(chirps), 
                                         ncol=nlayers(chirps)))
     anom_24mth_rast_filename <- paste0(out_basename, '_ppt_anom_24mth.tif')
-    writeRaster(anom_24mth_rast, anom_24mth_rast_filename, overwrite=TRUE)
+    writeRaster(anom_24mth_rast, filename=anom_24mth_rast_filename, 
+                overwrite=TRUE)
+
+    return(TRUE)
 }
