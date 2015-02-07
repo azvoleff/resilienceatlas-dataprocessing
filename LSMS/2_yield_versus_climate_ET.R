@@ -499,7 +499,7 @@ lm.beta.lmer <- function(mod) {
 
 yield_maize <- filter(yield, Crop == "Maize") %>%
     select(yld_kg_ha, fertilizer, improved_seed, hldr_ext, 
-           hldr_chem_fert, hldr_svc_credit, srtm_cut, precip_mean_annual, 
+           hldr_svc_credit, srtm_cut, precip_mean_annual, 
            precip_anom_12,  ea_id)
 maize_model <- lmer(yld_kg_ha ~ . - ea_id + srtm_cut + (1 | ea_id), data=yield_maize)
 summary(maize_model)
@@ -599,7 +599,10 @@ p <- ggplot(sensitivity, aes(type, yield_sensitivity, colour=type)) +
     theme_grey(base_size=8) +
     geom_point(size=1) + facet_grid(~crop) +
     geom_errorbar(aes(ymin=-1.96*std_err+yield_sensitivity,
-                      ymax=1.96*std_err+yield_sensitivity, width=.25)) +
+                      ymax=1.96*std_err+yield_sensitivity, width=.1), size=.4) +
+    geom_errorbar(aes(ymin=-1*std_err+yield_sensitivity,
+                      ymax=1*std_err+yield_sensitivity, width=.25), size=.4, 
+                  linetype=2) +
     ylab("Change in yield (kg / ha)") +
     ylim(c(-250, 250)) +
     theme(axis.title.x=element_blank(),
