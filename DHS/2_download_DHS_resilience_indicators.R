@@ -1,5 +1,7 @@
-require(dplyr)
 require(RJSONIO)
+require(dplyr)
+
+source('../0_settings.R')
 
 ###############################################################################
 ### Pick variables
@@ -66,7 +68,8 @@ indic <- full_join(indic, learn)
 # supplied
 indic <- group_by(indic, CountryName) %>%
     filter(SurveyYear == max(SurveyYear)) %>%
-    group_by(facet, DHS_CountryCode, CountryName, SurveyYear, SurveyId, IndicatorId, RegionId, CharacteristicLabel) %>%
+    group_by(facet, DHS_CountryCode, CountryName, SurveyYear, SurveyId, 
+             IndicatorId, RegionId, CharacteristicLabel) %>%
     summarize(Value=mean(as.numeric(Value)))
 
 # Make the income variables a sum
@@ -74,9 +77,23 @@ indic <- group_by(indic, CountryName) %>%
 # 10485003, # Percent in middle wealth quintile or above (women)
 # 10485004, # Percent in fourth quintile or above (women)
 # 10485005) # Percent in highest quintile or above (women)
-                #
+
+# TODO: Add in gridded data
+# load(file.path(prefix, "GRP", "Resilience_Indicator", 
+#                "dhs_regions_merged_with_Justin_data.RData"))
+#
+# gis_data <- dhs_regions@data
+# gis_data <- gis_data[c("REG_ID", "maize_per_person", "calories_per_person")]
+# gis_data <- tbl_df(gis_data)
+#
+# dim(indic)
+# indic <- left_join(indic, gis_data, by=list("RegionId"="REG_ID"))
+# dim(indic)
+
+# Ensure all indicators are in regional format
+
 save(indic, file=file.path(prefix, "GRP", 
                            "Resilience_Indicator","resil_raw_DHS_data.RData"))
 write.csv(indic, file=file.path(prefix, "GRP", 
-                           "Resilience_Indicator","resil_raw_DHS_data.csv", 
-                           row.names=FALSE))
+                                "Resilience_Indicator","resil_raw_DHS_data.csv"), 
+          row.names=FALSE)
