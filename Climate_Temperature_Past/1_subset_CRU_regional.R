@@ -1,8 +1,3 @@
-###############################################################################
-# Crops CRU pentad or monthly precipitation data to cover the spatial extent 
-# of the shp/CSA/PA boundary of each team site.
-###############################################################################
-
 library(rgdal)
 library(raster)
 library(stringr)
