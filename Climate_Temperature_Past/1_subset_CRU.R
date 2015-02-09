@@ -14,7 +14,7 @@ source('../0_settings.R')
 
 overwrite <- TRUE
 
-iso_key <- read.csv(file.path("..", "ISO_Codes.csv"))
+iso_key <- read.csv(file.path("..", "ISO_Codes.csv"), na.strings="")
 
 product <- 'cru_ts3.22'
 datestring <- '1901.2013'

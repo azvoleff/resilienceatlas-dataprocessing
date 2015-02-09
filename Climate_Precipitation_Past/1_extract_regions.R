@@ -25,9 +25,9 @@ dataset <- 'monthly'
 in_folder <- file.path(prefix, "CHIRPS", paste0('global_', dataset))
 out_folder <- file.path(prefix, "GRP", "CHIRPS")
 shp_folder <- file.path(prefix, "GRP", "Boundaries", "Regional")
-stopifnot(file_test("-d", shp_folder))
 stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
+stopifnot(file_test("-d", shp_folder))
 
 tifs <- dir(in_folder, pattern='.tif$')
 

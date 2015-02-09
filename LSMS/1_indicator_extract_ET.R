@@ -392,8 +392,9 @@ cats <- c("None", "Very low", "Low", "Average", "High", "Very high")
 # Choose quantiles
 qs <- c(0, .333, .666, 1)
 
+# Note the below assumes the index starts at zero
 rev_index <- function(x) {
-    max(x) + 1 - x
+    max(x) - x
 }
 
 calc_score <- function(x, name) {
