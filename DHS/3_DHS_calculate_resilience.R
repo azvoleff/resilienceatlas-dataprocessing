@@ -4,7 +4,6 @@ library(dplyr)
 library(rgeos)
 library(ggplot2)
 library(reshape2)
-library(teamlucc)
 library(RColorBrewer)
 
 source('../0_settings.R')
@@ -48,23 +47,30 @@ indic$ValueQuantile[stunt_rows] <- rev_index(indic$ValueQuantile[stunt_rows])
 imr_rows <- indic$Indicator == "Infant mortality rate"
 indic$ValueQuantile[imr_rows] <- rev_index(indic$ValueQuantile[imr_rows])
 
-group_by(filter(indic, RegionGRP %in% c("Horn of Africa", "Sahel", "Southeast Asia")),
-                RegionGRP, CountryName, Facet, Indicator) %>%
-    summarise(mean_quantile=mean(ValueQuantile)) %>%
-    ggplot()  +
-    geom_bar(aes(Indicator, mean_quantile, group=CountryName, fill=RegionGRP), position="dodge", 
-             stat="identity") +
-    facet_wrap(~ Facet, scales="free", drop=TRUE, nrow=3)
+# group_by(filter(indic, RegionGRP %in% c("Horn of Africa", "Sahel", "Southeast Asia")),
+#                 RegionGRP, CountryName, Facet, Indicator) %>%
+#     summarise(mean_quantile=mean(ValueQuantile)) %>%
+#     ggplot()  +
+#     geom_bar(aes(Indicator, mean_quantile, group=CountryName, fill=RegionGRP), position="dodge", 
+#              stat="identity") +
+#     facet_wrap(~ Facet, scales="free", drop=TRUE, nrow=3)
 
-resil <- group_by(indic, CountryName, RegionGRP, RegionId, Facet) %>%
+resil <- group_by(indic, DHS_CountryCode, CharacteristicLabel, CountryName, RegionGRP, RegionId, Facet) %>%
     summarise(Score=sum(ValueQuantile) / (NumValidValue[1]*(length(probs) - 2)) * 10)
 
-group_by(resil, CountryName, Facet) %>%
-    summarize(mean_score=mean(Score)) %>%
-    ggplot() +
-    geom_bar(aes(CountryName, mean_score, fill=Facet), position="dodge", stat="identity") +
-    xlab("Country") + ylab("Score") + ylim(0, 10) +
-    scale_fill_discrete("Facet of resilience")
+
+
+# data.frame(select(filter(indic, DHS_CountryCode == "ET"), Indicator, 
+# CharacteristicLabel, Value, ValueQuantile, NumValidValue))
+#
+# data.frame(filter(resil, DHS_CountryCode == "ET"))
+
+# group_by(resil, CountryName, Facet) %>%
+#     summarize(mean_score=mean(Score)) %>%
+#     ggplot() +
+#     geom_bar(aes(CountryName, mean_score, fill=Facet), position="dodge", stat="identity") +
+#     xlab("Country") + ylab("Score") + ylim(0, 10) +
+#     scale_fill_discrete("Facet of resilience")
 
 resil$Facet <- factor(resil$Facet,
                       levels=c('Buffer capacity', 'Self-organization', 
@@ -86,18 +92,37 @@ resil_wide$RegionId_short <- gsub('^[A-Z]{5}[0-9]{4}', '', resil_wide$RegionId)
 # resil_wide[!(resil_wide$RegionId_short %in% dhs_regions$RegionId_short), ]
 
 # Filter GIS dataset to only include regions that are in the resilience dataset
-dhs_regions <- dhs_regions[dhs_regions$RegionId_short %in% resil_wide$RegionId_short, ]
+dhs_regions <- dhs_regions[which(dhs_regions$RegionId_short %in% resil_wide$RegionId_short), ]
+resil_wide <- resil_wide[which(resil_wide$RegionId_short %in% dhs_regions$RegionId_short), ]
 
-dhs_regions@data <- dplyr::select(dhs_regions@data, RegionId_short, maize_per_person, 
-                           calories_per_person)
-dhs_regions@data <- merge(dhs_regions@data, resil_wide)
+# Ensure the datasets match
+stopifnot(nrow(dhs_regions) == nrow(resil_wide))
+stopifnot(length(unique(dhs_regions$RegionId_short)) == nrow(dhs_regions))
 
-dhs_regions$maize_per_person <- as.numeric(dhs_regions$maize_per_person)
-dhs_regions$calories_per_person <- as.numeric(dhs_regions$calories_per_person)
+# Order the datasets in the same way
+resil_wide <- resil_wide[order(resil_wide$RegionId_short), ]
+dhs_regions <- dhs_regions[order(dhs_regions$RegionId_short), ]
+
+dhs_regions@data <- dhs_regions@data['ISO']
+
+# Add columns from resil_wide
+dhs_regions$CountryName <- resil_wide$CountryName
+dhs_regions$RegionGRP <- resil_wide$RegionGRP
+dhs_regions$RegionId <- resil_wide$RegionId
+dhs_regions$SelfOrg <- resil_wide$SelfOrg
+dhs_regions$CapLearn <- resil_wide$CapLearn
+dhs_regions$BuffCap <- resil_wide$BuffCap
+
+dhs_regions@data[100,]
+
+#dhs_regions@data[dhs_regions@data$CountryName == "Ethiopia", ]
+
+# dhs_regions$maize_per_person <- as.numeric(dhs_regions$maize_per_person)
+# dhs_regions$calories_per_person <- as.numeric(dhs_regions$calories_per_person)
 writeOGR(dhs_regions, file.path(prefix, "GRP", "Resilience_Indicator"), 
          "resil_indicator", driver="ESRI Shapefile", overwrite=TRUE)
 
-display.brewer.all(n=10, exact.n=FALSE)
+# display.brewer.all(n=10, exact.n=FALSE)
 
 png('global_resilience_map.png', width=1500, heigh=1200)
 print(spplot(dhs_regions, c('BuffCap', 'CapLearn', 'SelfOrg'),
@@ -105,30 +130,13 @@ print(spplot(dhs_regions, c('BuffCap', 'CapLearn', 'SelfOrg'),
        par.settings=list(fontsize=list(text=20))))
 dev.off()
 
-shp_folder <- file.path(prefix, "GRP", "Boundaries", "Regional")
-stopifnot(file_test("-d", shp_folder))
-region_polygons <- readOGR(shp_folder, 'GRP_regions')
-
-region_rows <- c(2, 3, 5)
-for (n in region_rows) {
-    # Get region polygon
-    aoi <- region_polygons[n, ]
-    region <- as.character(aoi$Region)
-    region <- gsub(' ', '', region)
-    aoi <- spTransform(aoi, CRS(proj4string(dhs_regions)))
-
-    these_regions <- gIntersection(dhs_regions, aoi)
-
-    these_regions <- dhs_regions[which(gContains(aoi, dhs_regions, byid=TRUE)), ]
-    these_regions <- dhs_regions[which(dhs_regions$RegionGRP == "Sahel"), ]
-    these_regions <- gCrop(dhs_regions[which(gContains(aoi, dhs_regions, byid=TRUE)), ]
-    
+for (region in unique(dhs_regions$RegionGRP)) {
+    these_regions <- dhs_regions[which(dhs_regions$RegionGRP == region), ]
     png(paste0(gsub(' ', '', region), '_resilience_map.png'), width=1200, 
         heigh=900)
     print(spplot(these_regions,
            c('BuffCap', 'CapLearn', 'SelfOrg'),
            col.regions=brewer.pal(11, "PuOr"),
-           at=seq(0, 10), nrow=3))
+           at=seq(0, 10, 2), rows=3))
     dev.off()
 }
-
