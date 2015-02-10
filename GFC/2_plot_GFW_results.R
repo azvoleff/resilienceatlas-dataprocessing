@@ -45,4 +45,12 @@ for (ISO_2 in ISO_2s) {
         scale_y_continuous(labels=percent_format())
     ggsave(paste0(ISO_2, '_national_forest_loss.png'), width=3, height=2, 
            dpi=PLOT_DPI)
+    ggplot(filter(gfc_data_natl, min_percent_canopy_density == 20)) +
+        geom_line(aes(year, loss_percent / 100), colour="darkgreen") +
+        xlab('Year') + ylab('Forest loss') +
+        scale_x_date(breaks=as.Date(paste0('1/1/', c(2000, 2004, 2008, 2012)), '%m/%d/%Y'),
+                     labels=date_format("%Y")) +
+        scale_y_continuous(labels=percent_format())
+    ggsave(paste0(ISO_2, '_national_forest_loss.eps'), width=3, height=2, 
+           dpi=PLOT_DPI)
 }
