@@ -370,6 +370,10 @@ yield$improved_seed <- ifelse(yield$pp_s5q01 == "Improved",
                               FALSE)
 table(yield$pp_s5q01, useNA="always")
 
+# Calculate summary stats on percent with irrigation, improved seeds, and 
+# extension services
+
+
 # See section 7 for more on extension program, and whether farmer gets advisory 
 # services or credit services.
 
@@ -584,8 +588,8 @@ std_errors <- c(get_std_error(maize_model, "precip_mean_annual"),
 
 sensitivity <- data.frame(crop=c('Maize', 'Maize', 'Teff',
                                  'Teff', 'Barley', 'Barley'),
-                          type=c('Climate', 'Seasonal', 'Climate',
-                                 'Seasonal', 'Climate', 'Seasonal'),
+                          type=c('Long-term', 'Short-term', 'Long-term',
+                                 'Short-term', 'Long-term', 'Short-term'),
                           yield_sensitivity=yield_sensitivity,
                           std_err=std_errors)
 
@@ -610,4 +614,22 @@ p <- ggplot(sensitivity, aes(type, yield_sensitivity, colour=type)) +
 ggsave(paste0("ET", "_yield_sensitivity.png"), p, width=4, height=2, 
        dpi=PLOT_DPI)
 ggsave(paste0("ET", "_yield_sensitivity.eps"), p, width=4, height=2, 
+       dpi=PLOT_DPI)
+
+p <- ggplot(filter(sensitivity, type == "Short-term"),
+            aes(type, yield_sensitivity, colour=type)) + 
+    theme_grey(base_size=8) +
+    geom_point(size=1) + facet_grid(~crop) +
+    geom_errorbar(aes(ymin=-1.96*std_err+yield_sensitivity,
+                      ymax=1.96*std_err+yield_sensitivity, width=.1), size=.4) +
+    geom_errorbar(aes(ymin=-1*std_err+yield_sensitivity,
+                      ymax=1*std_err+yield_sensitivity, width=.25), size=.4, 
+                  linetype=2) +
+    ylab("Change in yield (kg / ha)") +
+    ylim(c(-250, 250)) +
+    theme(axis.title.x=element_blank(),
+          legend.position="none")
+ggsave(paste0("ET", "_yield_sensitivity_no_seasonal.png"), p, width=4, height=2, 
+       dpi=PLOT_DPI)
+ggsave(paste0("ET", "_yield_sensitivity_no_seasonal.eps"), p, width=4, height=2, 
        dpi=PLOT_DPI)
