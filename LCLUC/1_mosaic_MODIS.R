@@ -100,7 +100,7 @@ for (sitename in unique(tile_key$sitename)) {
         gdalwarp(vrt_files, dstfile, t_srs=t_srs, te=te,
                  tr=c(0.00416667, 0.00416667), 
                  tap=TRUE, multi=TRUE, wo=paste0("NUM_THREADS=", n_cpus), 
-                 overwrite=TRUE)
+                 overwrite=TRUE, ot="INT2S")
     }
 
 }

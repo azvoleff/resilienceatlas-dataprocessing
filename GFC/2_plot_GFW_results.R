@@ -19,6 +19,7 @@ plot_folder <- file.path(prefix, "GRP", "GFC", "GFW")
 stopifnot(file_test('-d', data_folder))
 
 ISO_2s <- c("ET", "NE", "ER")
+
 for (ISO_2 in ISO_2s) {
     gfc_data <- read.csv(file.path(in_folder, paste0(ISO_2, "_GFC.csv")))
 
