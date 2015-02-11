@@ -47,14 +47,14 @@ aoi_polygons <- aoi_polygons[aoi_polygons$Type == "Country", ]
 temp_stats <- foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
                        .packages=c("rgdal", "lubridate", "dplyr",
                                    "raster", "foreach", "ggplot2",
-                                   "scales")) %do% {
+                                   "scales", "rgeos", "teamlucc")) %do% {
     aoi <- aoi_polygons[n, ]
     name <- as.character(aoi$Name)
     name <- gsub(' ', '', name)
     aoi <- gConvexHull(aoi)
     aoi <- spTransform(aoi, CRS(utm_zone(aoi, proj4string=TRUE)))
     aoi <- gBuffer(aoi, width=100000)
-    aoi <- spTransform(aoi, CRS(s_srs))
+    aoi <- spTransform(aoi, CRS('+init=epsg:4326'))
 
     annual_means <- foreach(dataset=datasets, .combine=rbind) %do% {
         filename_base <- paste0(name, '_', product, '_', dataset, '_')

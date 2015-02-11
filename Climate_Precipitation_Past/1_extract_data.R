@@ -57,7 +57,7 @@ gdalbuildvrt(file.path(in_folder, tifs), vrt_file, separate=TRUE,
 s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
 
 aoi_polygons <- readOGR(shp_folder, 'Analysis_Areas')
-aoi_polygons <- aoi_polygons[aoi_polygons$Type == "Country", ]
+aoi_polygons <- aoi_polygons[aoi_polygons$Type == "Region", ]
 
 foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
          .packages=c('raster', 'teamlucc', 'rgeos', 'gdalUtils',
