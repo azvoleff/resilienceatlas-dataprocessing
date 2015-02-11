@@ -62,6 +62,21 @@ foreach (n=region_rows, .inorder=FALSE,
 
     ##########################################################################
     # Recode annual mean precipitation
+
+    # Below breaks are for IDN only
+    # annual_mean_ppt_rclmat <- matrix(c(-Inf, 0, -1,
+    #                                    0, 500, 0,
+    #                                    500, 1000, 1,
+    #                                    1000, 1500, 2,
+    #                                    1500, 2000, 3,
+    #                                    2000, 2500, 4,
+    #                                    2500, 3000, 5,
+    #                                    3000, 3500, 6,
+    #                                    3500, 4000, 7,
+    #                                    4000, 4500, 8,
+    #                                    4500, 5000, 9,
+    #                                    5000, 5500, 10,
+    #                                    5500, Inf, 11), ncol=3, byrow=TRUE)
     annual_mean_ppt_rclmat <- matrix(c(-Inf, 0, -1,
                                        0, 250, 0,
                                        250, 500, 1,
