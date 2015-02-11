@@ -15,8 +15,6 @@ n_cpus <- 3
 cl  <- makeCluster(n_cpus)
 registerDoParallel(cl)
 
-iso_key <- read.csv(file.path("..", "ISO_Codes.csv"))
-
 product <- 'cru_ts3.22'
 datestring <- '1901.2013'
 
@@ -38,27 +36,28 @@ datasets <- c('tmp', 'tmn', 'tmx')
 
 in_folder <- file.path(prefix, "GRP", "CRU")
 out_folder <- file.path(prefix, "GRP", "CRU")
-shp_folder <- file.path(prefix, "GRP", "Boundaries", "National")
+shp_folder <- file.path(prefix, "GRP", "Boundaries")
 stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
 stopifnot(file_test('-d', shp_folder))
 
-ISO_2s <- c("NE", "ET", "ER", "UG", "ID")
-regions <- c("Sahel", "HornofAfrica", "HornofAfrica", "EasternAfrica", "SoutheastAsia")
+aoi_polygons <- readOGR(shp_folder, 'Analysis_Areas')
+aoi_polygons <- aoi_polygons[aoi_polygons$Type == "Country", ]
 
-temp_stats <- foreach (geog_num=1:length(ISO_2s), .inorder=FALSE,
+temp_stats <- foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
                        .packages=c("rgdal", "lubridate", "dplyr",
                                    "raster", "foreach", "ggplot2",
                                    "scales")) %do% {
-    ISO_2 <- ISO_2s[geog_num]
-    region <- regions[geog_num]
-
-    ISO_3 <- as.character(iso_key$ISO_3[match(ISO_2, iso_key$ISO_2)])
-    aoi <- readOGR(shp_folder, paste0(ISO_3, '_adm0'))
-    stopifnot(length(aoi) == 1)
+    aoi <- aoi_polygons[n, ]
+    name <- as.character(aoi$Name)
+    name <- gsub(' ', '', name)
+    aoi <- gConvexHull(aoi)
+    aoi <- spTransform(aoi, CRS(utm_zone(aoi, proj4string=TRUE)))
+    aoi <- gBuffer(aoi, width=100000)
+    aoi <- spTransform(aoi, CRS(s_srs))
 
     annual_means <- foreach(dataset=datasets, .combine=rbind) %do% {
-        filename_base <- paste0(region, '_', product, '_', dataset, '_')
+        filename_base <- paste0(name, '_', product, '_', dataset, '_')
         cru_data_file <- file.path(out_folder,
                               paste0(filename_base, datestring,  '.tif'))
         included_dates <- dates[(dates >= start_date) & (dates < end_date)]
@@ -67,7 +66,6 @@ temp_stats <- foreach (geog_num=1:length(ISO_2s), .inorder=FALSE,
 
         aoi <- spTransform(aoi, CRS(proj4string(cru_data)))
 
-        cru_data <- crop(cru_data, aoi)
         cru_data <- mask(cru_data, aoi)
 
         years <- year(included_dates)
@@ -88,7 +86,7 @@ temp_stats <- foreach (geog_num=1:length(ISO_2s), .inorder=FALSE,
     }
 
     write.csv(annual_means,
-              file=file.path(out_folder, paste0(ISO_2, "_", product, 
+              file=file.path(out_folder, paste0(name, "_", product, 
                                                 '_meanannual_timeseries.csv')),
               row.names=FALSE)
 
@@ -103,10 +101,10 @@ temp_stats <- foreach (geog_num=1:length(ISO_2s), .inorder=FALSE,
         xlab('Year') + ylab('Degrees (C)') +
         scale_x_continuous(breaks=c(1984, 2000, 2014)) +
         scale_colour_discrete("Temperature")
-    ggsave(file.path(out_folder, paste0(ISO_2, "_", product, 
+    ggsave(file.path(out_folder, paste0(name, "_", product, 
                                         '_meanannual_timeseries.png')), p1,
            width=4, height=2, dpi=PLOT_DPI)
-    ggsave(file.path(out_folder, paste0(ISO_2, "_", product, 
+    ggsave(file.path(out_folder, paste0(name, "_", product, 
                                         '_meanannual_timeseries.eps')), p1,
            width=4, height=2, dpi=PLOT_DPI)
 
@@ -115,10 +113,10 @@ temp_stats <- foreach (geog_num=1:length(ISO_2s), .inorder=FALSE,
         geom_line(aes(year, mean), colour="coral3") +
         xlab('Year') + ylab(expression('Temperature ('*degree*'C)')) +
         scale_x_continuous(breaks=c(1984, 2000, 2014))
-    ggsave(file.path(out_folder, paste0(ISO_2, "_", product, 
+    ggsave(file.path(out_folder, paste0(name, "_", product, 
                                         '_meanannual_timeseries_tmponly.png')), p2,
            width=4, height=2, dpi=PLOT_DPI)
-    ggsave(file.path(out_folder, paste0(ISO_2, "_", product, 
+    ggsave(file.path(out_folder, paste0(name, "_", product, 
                                         '_meanannual_timeseries_tmponly.eps')), p2,
            width=4, height=2, dpi=PLOT_DPI)
 }
