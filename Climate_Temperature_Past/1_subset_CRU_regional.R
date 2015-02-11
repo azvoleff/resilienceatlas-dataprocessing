@@ -25,7 +25,7 @@ stopifnot(file_test('-d', out_folder))
 stopifnot(file_test("-d", shp_folder))
 
 #datasets <- c('tmn', 'tmx', 'tmp')
-datasets <- c('tmn', 'tmx')
+datasets <- c('tmn', 'tmx', 'tmp')
 
 # This is the projection of the CRU files
 s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'

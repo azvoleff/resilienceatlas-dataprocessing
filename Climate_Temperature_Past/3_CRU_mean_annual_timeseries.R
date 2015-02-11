@@ -43,12 +43,13 @@ stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
 stopifnot(file_test('-d', shp_folder))
 
-ISO_2s <- c("NE", "ET", "ER")
-regions <- c("Sahel", "HornofAfrica", "HornofAfrica")
+ISO_2s <- c("NE", "ET", "ER", "UG", "ID")
+regions <- c("Sahel", "HornofAfrica", "HornofAfrica", "EasternAfrica", "SoutheastAsia")
 
 temp_stats <- foreach (geog_num=1:length(ISO_2s), .inorder=FALSE,
                        .packages=c("rgdal", "lubridate", "dplyr",
-                                   "raster", "foreach", "ggplot2")) %dopar% {
+                                   "raster", "foreach", "ggplot2",
+                                   "scales")) %do% {
     ISO_2 <- ISO_2s[geog_num]
     region <- regions[geog_num]
 
@@ -109,27 +110,17 @@ temp_stats <- foreach (geog_num=1:length(ISO_2s), .inorder=FALSE,
                                         '_meanannual_timeseries.eps')), p1,
            width=4, height=2, dpi=PLOT_DPI)
 
-
-    ylims <- c(min(filter(annual_means, dataset == "Mean")$mean),
-               max(filter(annual_means, dataset == "Mean")$mean))
-    ylims <- round(ylims / 4)*4
-    if(ylims[1] == ylims[2]) ylims[2] <- ylims[2] + 4
-
     p2 <- ggplot(filter(annual_means, dataset == "Mean")) +
         theme_bw() +
         geom_line(aes(year, mean), colour="coral3") +
         xlab('Year') + ylab(expression('Temperature ('*degree*'C)')) +
-        scale_x_continuous(breaks=c(1985, 2000, 2015)) +
-        ylim(ylims) +
-        scale_y_continuous(breaks=pretty_breaks())
+        scale_x_continuous(breaks=c(1984, 2000, 2014))
     ggsave(file.path(out_folder, paste0(ISO_2, "_", product, 
                                         '_meanannual_timeseries_tmponly.png')), p2,
            width=4, height=2, dpi=PLOT_DPI)
     ggsave(file.path(out_folder, paste0(ISO_2, "_", product, 
                                         '_meanannual_timeseries_tmponly.eps')), p2,
            width=4, height=2, dpi=PLOT_DPI)
-
-
 }
 
 stopCluster(cl)
