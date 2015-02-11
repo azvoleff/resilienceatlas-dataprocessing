@@ -9,6 +9,8 @@ library(SPEI)
 library(foreach)
 library(doParallel)
 
+spi_periods <- 12
+
 n_cpus <- 12
 
 cl  <- makeCluster(n_cpus)
@@ -25,7 +27,6 @@ chirps_start_date <- as.Date('1981/1/1')
 chirps_end_date <- as.Date('2014/12/1')
 yrs <- seq(year(chirps_start_date), year(chirps_end_date))
 dates <- seq(chirps_start_date, chirps_end_date, by='months')
-periods_per_year <- 12
 
 # Select the start and end dates for the data to include in this analysis
 start_date <- as.Date('1985/1/1') # Inclusive
@@ -56,7 +57,6 @@ calc_spi <- function(chirps_mat, spi_period) {
 }
 
 for (n in region_rows) {
-    timestamp()
     timestamp()
     aoi <- region_polygons[n, ]
     region <- as.character(aoi$Region)

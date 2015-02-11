@@ -24,7 +24,7 @@ dataset <- 'monthly'
 
 in_folder <- file.path(prefix, "CHIRPS", paste0('global_', dataset))
 out_folder <- file.path(prefix, "GRP", "CHIRPS")
-shp_folder <- file.path(prefix, "GRP", "Boundaries", "Regional")
+shp_folder <- file.path(prefix, "GRP", "Boundaries")
 stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
 stopifnot(file_test("-d", shp_folder))
@@ -56,31 +56,30 @@ gdalbuildvrt(file.path(in_folder, tifs), vrt_file, separate=TRUE,
 # accompanying the data
 s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
 
-region_polygons <- readOGR(shp_folder, 'GRP_regions')
+aoi_polygons <- readOGR(shp_folder, 'Analysis_Areas')
+aoi_polygons <- aoi_polygons[aoi_polygons$Type == "Country", ]
 
-region_rows <- c(2, 3, 5)
-
-foreach (n=region_rows, .inorder=FALSE,
+foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
          .packages=c('raster', 'teamlucc', 'rgeos', 'gdalUtils',
                      'rgdal')) %dopar% {
     timestamp()
 
-    aoi <- region_polygons[n, ]
-    region <- as.character(aoi$Region)
-    region <- gsub(' ', '', region)
+    aoi <- aoi_polygons[n, ]
+    name <- as.character(aoi$Name)
+    name <- gsub(' ', '', name)
     aoi <- gConvexHull(aoi)
     aoi <- spTransform(aoi, CRS(utm_zone(aoi, proj4string=TRUE)))
     aoi <- gBuffer(aoi, width=100000)
     aoi <- spTransform(aoi, CRS(s_srs))
     te <- as.numeric(bbox(aoi))
 
-    print(paste0("Processing ", region, "..."))
+    print(paste0("Processing ", name, "..."))
 
     # Round extent so that pixels are aligned properly
     te <- round(te*20)/20
 
     base_name <- file.path(out_folder,
-                           paste0(region, '_CHIRPS_', dataset,
+                           paste0(name, '_CHIRPS_', dataset,
                                   '_', start_date, '-', end_date))
 
     chirps_tif <- paste0(base_name, '.tif')
