@@ -11,6 +11,7 @@ library(foreign)
 library(spgwr)
 library(raster)
 library(spgwr)
+library(scales)
 library(reshape2)
 library(sp)
 library(dplyr)
@@ -572,19 +573,21 @@ get_std_error <- function(model, term) {
     se.coef(model)$fixef[term_num]
 }
 
+
 # Plot coefficients from all three models for report
-yield_sensitivity <- c(fixef(maize_model)["precip_mean_annual"],
-                       fixef(maize_model)["precip_anom_12"],
-                       fixef(teff_model)["precip_mean_annual"],
-                       fixef(teff_model)["precip_anom_12"],
-                       fixef(barley_model)["precip_mean_annual"],
-                       fixef(barley_model)["precip_anom_12"])
-std_errors <- c(get_std_error(maize_model, "precip_mean_annual"),
-                get_std_error(maize_model, "precip_anom_12"),
-                get_std_error(teff_model, "precip_mean_annual"),
-                get_std_error(teff_model, "precip_anom_12"),
-                get_std_error(barley_model, "precip_mean_annual"),
-                get_std_error(barley_model, "precip_anom_12"))
+yield_sensitivity <- c((fixef(maize_model)["precip_mean_annual"]/fixef(maize_model)["(Intercept)"]),
+                       (fixef(maize_model)["precip_anom_12"]/fixef(maize_model)["(Intercept)"]),
+                       (fixef(teff_model)["precip_mean_annual"]/fixef(teff_model)["(Intercept)"]),
+                       (fixef(teff_model)["precip_anom_12"]/fixef(teff_model)["(Intercept)"]),
+                       (fixef(barley_model)["precip_mean_annual"]/fixef(barley_model)["(Intercept)"]),
+                       (fixef(barley_model)["precip_anom_12"]/fixef(barley_model)["(Intercept)"]))
+
+std_errors <- c((get_std_error(maize_model, "precip_mean_annual")/fixef(maize_model)["(Intercept)"]),
+                (get_std_error(maize_model, "precip_anom_12")/fixef(maize_model)["(Intercept)"]),
+                (get_std_error(teff_model, "precip_mean_annual")/fixef(teff_model)["(Intercept)"]),
+                (get_std_error(teff_model, "precip_anom_12")/fixef(teff_model)["(Intercept)"]),
+                (get_std_error(barley_model, "precip_mean_annual")/fixef(barley_model)["(Intercept)"]),
+                (get_std_error(barley_model, "precip_anom_12")/fixef(barley_model)["(Intercept)"]))
 
 sensitivity <- data.frame(crop=c('Maize', 'Maize', 'Teff',
                                  'Teff', 'Barley', 'Barley'),
@@ -600,15 +603,15 @@ sensitivity$crop <- ordered(sensitivity$crop, level=c('Maize', 'Teff',
 # than maize, so would tend to be growing in drier areas
 
 p <- ggplot(sensitivity, aes(type, yield_sensitivity, colour=type)) + 
-    theme_grey(base_size=8) +
+    theme_bw(base_size=8) +
     geom_point(size=1) + facet_grid(~crop) +
     geom_errorbar(aes(ymin=-1.96*std_err+yield_sensitivity,
                       ymax=1.96*std_err+yield_sensitivity, width=.1), size=.4) +
     geom_errorbar(aes(ymin=-1*std_err+yield_sensitivity,
                       ymax=1*std_err+yield_sensitivity, width=.25), size=.4, 
                   linetype=2) +
-    ylab("Change in yield (kg / ha)") +
-    ylim(c(-250, 250)) +
+    ylab("Change in yield (%)") +
+    scale_y_continuous(labels=percent_format()) +
     theme(axis.title.x=element_blank(),
           legend.position="none")
 ggsave(paste0("ET", "_yield_sensitivity.png"), p, width=4, height=2, 
@@ -618,15 +621,15 @@ ggsave(paste0("ET", "_yield_sensitivity.eps"), p, width=4, height=2,
 
 p <- ggplot(filter(sensitivity, type == "Short-term"),
             aes(type, yield_sensitivity, colour=type)) + 
-    theme_grey(base_size=8) +
+    theme_bw(base_size=8) +
     geom_point(size=1) + facet_grid(~crop) +
     geom_errorbar(aes(ymin=-1.96*std_err+yield_sensitivity,
                       ymax=1.96*std_err+yield_sensitivity, width=.1), size=.4) +
     geom_errorbar(aes(ymin=-1*std_err+yield_sensitivity,
                       ymax=1*std_err+yield_sensitivity, width=.25), size=.4, 
                   linetype=2) +
-    ylab("Change in yield (kg / ha)") +
-    ylim(c(-250, 250)) +
+    ylab("Change in yield (%)") +
+    scale_y_continuous(labels=percent_format()) +
     theme(axis.title.x=element_blank(),
           legend.position="none")
 ggsave(paste0("ET", "_yield_sensitivity_no_seasonal.png"), p, width=4, height=2, 

@@ -96,17 +96,40 @@ temp_stats <- foreach (geog_num=1:length(ISO_2s), .inorder=FALSE,
     annual_means$dataset[annual_means$dataset == "tmn"] <- "Minimum"
     annual_means$dataset[annual_means$dataset == "tmx"] <- "Maximum"
 
-    p <- ggplot(annual_means) +
+    p1 <- ggplot(annual_means) +
+        theme_bw() +
         geom_line(aes(year, mean, colour=dataset)) +
         xlab('Year') + ylab('Degrees (C)') +
         scale_x_continuous(breaks=c(1984, 2000, 2014)) +
         scale_colour_discrete("Temperature")
     ggsave(file.path(out_folder, paste0(ISO_2, "_", product, 
-                                        '_meanannual_timeseries.png')), p,
+                                        '_meanannual_timeseries.png')), p1,
            width=4, height=2, dpi=PLOT_DPI)
     ggsave(file.path(out_folder, paste0(ISO_2, "_", product, 
-                                        '_meanannual_timeseries.eps')), p,
+                                        '_meanannual_timeseries.eps')), p1,
            width=4, height=2, dpi=PLOT_DPI)
+
+
+    ylims <- c(min(filter(annual_means, dataset == "Mean")$mean),
+               max(filter(annual_means, dataset == "Mean")$mean))
+    ylims <- round(ylims / 4)*4
+    if(ylims[1] == ylims[2]) ylims[2] <- ylims[2] + 4
+
+    p2 <- ggplot(filter(annual_means, dataset == "Mean")) +
+        theme_bw() +
+        geom_line(aes(year, mean), colour="coral3") +
+        xlab('Year') + ylab(expression('Temperature ('*degree*'C)')) +
+        scale_x_continuous(breaks=c(1985, 2000, 2015)) +
+        ylim(ylims) +
+        scale_y_continuous(breaks=pretty_breaks())
+    ggsave(file.path(out_folder, paste0(ISO_2, "_", product, 
+                                        '_meanannual_timeseries_tmponly.png')), p2,
+           width=4, height=2, dpi=PLOT_DPI)
+    ggsave(file.path(out_folder, paste0(ISO_2, "_", product, 
+                                        '_meanannual_timeseries_tmponly.eps')), p2,
+           width=4, height=2, dpi=PLOT_DPI)
+
+
 }
 
 stopCluster(cl)
