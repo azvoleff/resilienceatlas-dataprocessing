@@ -76,7 +76,7 @@ foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
     print(paste0("Processing ", name, "..."))
 
     # Round extent so that pixels are aligned properly
-    te <- round(te*20)/20
+    te <- round(te * 20) / 20
 
     base_name <- file.path(out_folder,
                            paste0(name, '_CHIRPS_', dataset,
