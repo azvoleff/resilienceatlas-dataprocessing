@@ -28,6 +28,8 @@ gg_transparent_opts <- theme(legend.position="bottom",
 #                                'Unclassified'))
 
 
+filter(lcluc, class == 16)
+
 ggplot(filter(lcluc, class == 16)) + gg_general + 
     geom_line(aes(year, frac_pixels), size=1.5) +
     facet_wrap(~sitecode) +
@@ -35,8 +37,7 @@ ggplot(filter(lcluc, class == 16)) + gg_general +
     scale_x_date(breaks=date_breaks("3 years"), labels=date_format("%Y")) +
     ylab('Percent of site') + xlab('Year') +
     theme(panel.background=element_rect(fill='darkgrey', colour='grey')) +
-    guides(colour=guide_legend(ncol=2)) +
-    gg_lcluc_colour
+    guides(colour=guide_legend(ncol=2))
 
 ggsave(paste0('MCD12Q1_all_sites_recode_percent.png'), width=width, 
        height=height, dpi=dpi, plot=p, bg='transparent')
