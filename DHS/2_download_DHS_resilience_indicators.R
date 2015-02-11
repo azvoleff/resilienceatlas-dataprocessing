@@ -88,7 +88,7 @@ table(indic$CountryName == "Niger", indic$SurveyYear)
 
 indic$SurveyYear <- as.numeric(indic$SurveyYear)
 
-indic <- indic[indic$SurveyYear > 2004, ]
+indic <- indic[indic$SurveyYear >= 2002, ]
 table(indic$SurveyYear)
 table(indic$CountryName)
 

@@ -58,8 +58,6 @@ indic$ValueQuantile[imr_rows] <- rev_index(indic$ValueQuantile[imr_rows])
 resil <- group_by(indic, DHS_CountryCode, CharacteristicLabel, CountryName, RegionGRP, RegionId, Facet) %>%
     summarise(Score=sum(ValueQuantile) / (NumValidValue[1]*(length(probs) - 2)) * 10)
 
-
-
 # data.frame(select(filter(indic, DHS_CountryCode == "ET"), Indicator, 
 # CharacteristicLabel, Value, ValueQuantile, NumValidValue))
 #
