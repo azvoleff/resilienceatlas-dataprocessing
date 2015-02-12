@@ -69,5 +69,6 @@ for (n in 1:nrow(aoi_polygons)) {
                          period=spi_period)
 
     save(spi_ts, file=paste0(file_basename, "_SPI_", spi_period, 
-                             "_meantimeseries.RData")
+                             "_meantimeseries.RData"))
+
 }
