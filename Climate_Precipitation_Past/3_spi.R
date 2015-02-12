@@ -13,7 +13,7 @@ library(lubridate)
 
 spi_periods <- c(12)
 
-n_cpus <- 8
+n_cpus <- 15
 
 cl  <- makeCluster(n_cpus)
 registerDoParallel(cl)
@@ -66,12 +66,17 @@ for (n in 1:nrow(aoi_polygons)) {
 
     print(paste0("Processing ", name, "..."))
 
-    base_name <- file.path(out_folder,
+    in_basename <- file.path(out_folder,
                            paste0(name, '_CHIRPS_', dataset,
                                   '_', format(chirps_start_date, "%Y%m"), '-', 
                                   format(chirps_end_date, "%Y%m")))
 
-    chirps_tif <- paste0(base_name, '.tif')
+    chirps_tif <- paste0(in_basename, '.tif')
+
+    out_basename <- file.path(out_folder,
+                              paste0(name, '_CHIRPS_',
+                                     format(start_date, "%Y%m"), '-',
+                                     format(end_date, "%Y%m")))
 
     # Calculate the band numbers that are needed
     included_dates <- dates[(dates >= start_date) & (dates <= end_date)]
@@ -85,9 +90,7 @@ for (n in 1:nrow(aoi_polygons)) {
         spi_mat <- calc_spi(chirps_mat, spi_period)
         out_rast <- brick(chirps, values=FALSE, nl=nlayers(chirps))
         out_rast <- setValues(out_rast, t(spi_mat))
-        spi_filename <- file.path(out_folder,
-                                  paste0(filename_base, 'SPI_', 
-                                         spi_period, '.tif'))
+        spi_filename <- paste0(out_basename, 'SPI_', spi_period, '.tif')
         out_rast <- writeRaster(out_rast, spi_filename, overwrite=TRUE,
                                 datatype="INT2S")
     }
