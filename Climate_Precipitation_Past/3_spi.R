@@ -4,20 +4,23 @@
 
 source('../0_settings.R')
 
+library(rgdal)
 library(raster)
 library(SPEI)
 library(foreach)
 library(doParallel)
+library(lubridate)
 
-spi_periods <- 12
+spi_periods <- c(12)
 
-n_cpus <- 12
+n_cpus <- 8
 
 cl  <- makeCluster(n_cpus)
 registerDoParallel(cl)
 
 in_folder <- file.path(prefix, "GRP", "CHIRPS")
 out_folder <- file.path(prefix, "GRP", "CHIRPS")
+shp_folder <- file.path(prefix, "GRP", "Boundaries")
 
 dataset <- 'monthly' # For SPI, use monthly
 
@@ -34,9 +37,8 @@ end_date <- as.Date('2014/12/1') # Exclusive
 
 stopifnot(dataset == "monthly")
 
-region_polygons <- readOGR(shp_folder, 'GRP_regions')
-
-region_rows <- c(2, 3, 5)
+aoi_polygons <- readOGR(shp_folder, 'Analysis_Areas')
+aoi_polygons <- aoi_polygons[aoi_polygons$Type == "Country", ]
 
 # Define function to calculate SPI
 calc_spi <- function(chirps_mat, spi_period) {
@@ -56,16 +58,16 @@ calc_spi <- function(chirps_mat, spi_period) {
     return(spi_mat)
 }
 
-for (n in region_rows) {
+for (n in 1:nrow(aoi_polygons)) {
     timestamp()
-    aoi <- region_polygons[n, ]
-    region <- as.character(aoi$Region)
-    region <- gsub(' ', '', region)
+    aoi <- aoi_polygons[n, ]
+    name <- as.character(aoi$Name)
+    name <- gsub(' ', '', name)
 
-    print(paste0("Processing ", region, "..."))
+    print(paste0("Processing ", name, "..."))
 
     base_name <- file.path(out_folder,
-                           paste0(region, '_CHIRPS_', dataset,
+                           paste0(name, '_CHIRPS_', dataset,
                                   '_', format(chirps_start_date, "%Y%m"), '-', 
                                   format(chirps_end_date, "%Y%m")))
 
