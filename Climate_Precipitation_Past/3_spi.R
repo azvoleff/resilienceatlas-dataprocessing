@@ -90,7 +90,7 @@ for (n in 1:nrow(aoi_polygons)) {
         spi_mat <- calc_spi(chirps_mat, spi_period)
         out_rast <- brick(chirps, values=FALSE, nl=nlayers(chirps))
         out_rast <- setValues(out_rast, t(spi_mat))
-        spi_filename <- paste0(out_basename, 'SPI_', spi_period, '.tif')
+        spi_filename <- paste0(out_basename, '_SPI_', spi_period, '.tif')
         out_rast <- writeRaster(out_rast, spi_filename, overwrite=TRUE,
                                 datatype="INT2S")
     }
