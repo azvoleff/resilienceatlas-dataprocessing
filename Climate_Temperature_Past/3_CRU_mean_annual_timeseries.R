@@ -42,8 +42,9 @@ stopifnot(file_test('-d', out_folder))
 stopifnot(file_test('-d', shp_folder))
 
 aoi_polygons <- readOGR(shp_folder, 'Analysis_Areas')
-aoi_polygons <- aoi_polygons[aoi_polygons$Type == "Country", ]
-aoi_polygons <- aoi_polygons[aoi_polygons$Name %in% c("Uganda", "Indonesia"), ]
+# aoi_polygons <- aoi_polygons[aoi_polygons$Type == "Country", ]
+# aoi_polygons <- aoi_polygons[aoi_polygons$Name %in% c("Uganda", "Indonesia"), ]
+aoi_polygons <- aoi_polygons[aoi_polygons$Name %in% c("Bwindi"), ]
 
 temp_stats <- foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
                        .packages=c("rgdal", "lubridate", "dplyr",
@@ -99,7 +100,7 @@ temp_stats <- foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
     p1 <- ggplot(annual_means) +
         theme_bw() +
         geom_line(aes(year, mean, colour=dataset)) +
-        xlab('Year') + ylab('Degrees (C)') +
+        xlab('Year') + ylab(expression('Temperature ('*degree*'C)')) +
         scale_x_continuous(breaks=c(1984, 2000, 2014)) +
         scale_colour_discrete("Temperature")
     ggsave(file.path(out_folder, paste0(name, "_", product, 
