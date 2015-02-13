@@ -13,6 +13,12 @@ library(ggplot2)
 library(dplyr)
 library(scales)
 
+library(doParallel)
+library(foreach)
+
+cl  <- makeCluster(3)
+registerDoParallel(cl)
+
 overwrite <- TRUE
 
 product <- 'v1p8chirps'
@@ -41,7 +47,8 @@ aoi_polygons <- aoi_polygons[aoi_polygons$Type == "Country", ]
 
 spi_period <- 12
 
-for (n in 1:nrow(aoi_polygons)) {
+foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
+         .packages=c('raster','rgdal', 'ggplot2', 'dplyr', 'scales')) %dopar% {
     timestamp()
     aoi <- aoi_polygons[n, ]
     name <- as.character(aoi$Name)

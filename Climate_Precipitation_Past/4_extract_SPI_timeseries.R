@@ -13,14 +13,10 @@ library(lubridate)
 library(doParallel)
 library(foreach)
 
-n_cpus <- 4
+cl  <- makeCluster(3)
+registerDoParallel(cl)
 
 overwrite <- TRUE
-
-product <- 'v1p8chirps'
-chirps_NA_value <- -9999
-dataset <- 'monthly' # For SPI, use monthly
-date_limits_string <- '198101-201404'
 
 # Select the start and end dates for the data to include in this analysis
 start_date <- as.Date('1985/1/1') # Inclusive
@@ -37,13 +33,13 @@ stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
 shp_folder <- file.path(prefix, "GRP", "Boundaries")
 
-
 aoi_polygons <- readOGR(shp_folder, 'Analysis_Areas')
 aoi_polygons <- aoi_polygons[aoi_polygons$Type == "Country", ]
 
 spi_period <- 12
 
-for (n in 1:nrow(aoi_polygons)) {
+foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
+         .packages=c('raster','rgdal')) %dopar% {
     timestamp()
     aoi <- aoi_polygons[n, ]
     name <- as.character(aoi$Name)

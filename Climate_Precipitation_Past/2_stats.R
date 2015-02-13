@@ -52,7 +52,7 @@ end_date <- as.Date('2013/12/1')
 region_polygons <- readOGR(shp_folder, 'GRP_regions')
 
 #region_rows <- c(2, 3, 5)
-region_rows <- c(5)
+region_rows <- c(1)
 
 foreach (n=region_rows, .inorder=FALSE,
          .packages=c('raster', 'rgeos', 'dplyr', 'lubridate',

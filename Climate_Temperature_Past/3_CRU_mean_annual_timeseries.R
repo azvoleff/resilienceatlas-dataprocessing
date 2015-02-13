@@ -43,6 +43,7 @@ stopifnot(file_test('-d', shp_folder))
 
 aoi_polygons <- readOGR(shp_folder, 'Analysis_Areas')
 aoi_polygons <- aoi_polygons[aoi_polygons$Type == "Country", ]
+aoi_polygons <- aoi_polygons[aoi_polygons$Name %in% c("Uganda", "Indonesia"), ]
 
 temp_stats <- foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
                        .packages=c("rgdal", "lubridate", "dplyr",

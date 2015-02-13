@@ -32,14 +32,14 @@ stopifnot(file_test('-d', shp_folder))
 # Note the below code is INCLUSIVE of the start date
 chirps_start_date <- as.Date('1981/1/1')
 # Note the below code is INCLUSIVE of the end date
-chirps_end_date <- as.Date('2014/12/1')
+chirps_end_date <- as.Date('2014/4/1')
 yrs <- seq(year(chirps_start_date), year(chirps_end_date))
 dates <- seq(chirps_start_date, chirps_end_date, by='months')
 periods_per_year <- 12
 
 # Select the start and end dates for the data to include in this analysis
-start_date <- as.Date('1985/1/1') # Inclusive
-end_date <- as.Date('2014/12/1') # Exclusive
+start_date <- as.Date('1984/1/1') # Inclusive
+end_date <- as.Date('2013/12/1') # Exclusive
 
 # This is the projection of the CHIRPS files, read from the .hdr files 
 # accompanying the data
@@ -47,7 +47,7 @@ s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
 
 region_polygons <- readOGR(shp_folder, 'GRP_regions')
 
-region_rows <- c(2, 3, 5)
+region_rows <- c(1)
 
 foreach (n=region_rows, .inorder=FALSE,
          .packages=c("rgdal", "lubridate", "dplyr", "raster",
@@ -60,11 +60,20 @@ foreach (n=region_rows, .inorder=FALSE,
 
     message('Processing ', region, '...')
     
+    ###### TEMPORARY
+    in_basename <- file.path(in_folder, paste0(region, ''))
+    #in_basename <- file.path(in_folder, paste0(region, '_CHIRPS'))
+    ###### TEMPORARY
 
-    base_name <- file.path(out_folder, paste0(region, '_CHIRPS'))
-    chirps_tif <- paste0(base_name, "_", dataset, '_', 
-                                format(chirps_start_date, "%Y%m"), '-', 
-                                format(chirps_end_date, "%Y%m"), '.tif')
+    out_basename <- file.path(out_folder, paste0(region, '_CHIRPS_',
+                                format(start_date, "%Y%m"), '-', 
+                                format(end_date, "%Y%m")))
+                                  
+    chirps_tif <- paste0(in_basename, "_", dataset, '_', 
+                         format(chirps_start_date, "%Y%m"), '-', 
+                         format(chirps_end_date, "%Y%m"), '.tif')
+
+    chirps_tif <- file.path(in_folder, 'EasternAfrica_v1p8chirps_monthly_198101-201404.tif')
 
     # Calculate the band numbers that are needed
     included_dates <- dates[(dates >= start_date) & (dates <= end_date)]
@@ -105,7 +114,7 @@ foreach (n=region_rows, .inorder=FALSE,
                                       nrow=nrow(chirps)*ncol(chirps), 
                                       ncol=1, byrow=TRUE))
     annual_ppt_slope_rast <- writeRaster(annual_ppt_slope_rast,
-                filename=paste0(base_name, '_annual_ppt_slope.tif'), 
+                filename=paste0(out_basename, '_annual_ppt_slope.tif'), 
                 overwrite=TRUE)
 
     annual_ppt_p_val_rast <- brick(chirps, values=FALSE, nl=1)
@@ -114,14 +123,14 @@ foreach (n=region_rows, .inorder=FALSE,
                                       nrow=nrow(chirps)*ncol(chirps), 
                                       ncol=1, byrow=TRUE))
     annual_ppt_p_val_rast <- writeRaster(annual_ppt_p_val_rast,
-                filename=paste0(base_name, '_annual_ppt_pval.tif'), 
+                filename=paste0(out_basename, '_annual_ppt_pval.tif'), 
                 overwrite=TRUE)
 
     annual_ppt_slope_rast <- overlay(annual_ppt_slope_rast, annual_ppt_p_val_rast,
         fun=function(slp, p) {
             return(slp * (p < .05))
         },
-        filename=paste0(base_name, '_annual_ppt_slope_masked.tif'),
+        filename=paste0(out_basename, '_annual_ppt_slope_masked.tif'),
         overwrite=TRUE)
 
 }
