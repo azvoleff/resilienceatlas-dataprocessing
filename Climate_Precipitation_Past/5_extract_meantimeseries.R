@@ -1,7 +1,3 @@
-###############################################################################
-# Calculates mean precipitation for GRP countries.
-###############################################################################
-
 source('../0_settings.R')
 
 library(rgdal)
@@ -12,7 +8,6 @@ library(rgeos)
 library(teamlucc)
 library(foreach)
 library(doParallel)
-library(spatial.tools)
 
 cl  <- makeCluster(10)
 registerDoParallel(cl)
