@@ -46,7 +46,8 @@ aoi_polygons <- readOGR(shp_folder, 'Analysis_Areas')
 temp_stats <- foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
                        .packages=c("rgdal", "lubridate", "dplyr",
                                    "raster", "foreach", "ggplot2",
-                                   "scales", "rgeos", "teamlucc")) %do% {
+                                   "scales", "rgeos", "teamlucc"),
+                       .combine=rbind) %do% {
     aoi <- aoi_polygons[n, ]
     name <- as.character(aoi$Name)
     name <- gsub(' ', '', name)
@@ -58,39 +59,18 @@ temp_stats <- foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
     annual_means$dataset[annual_means$dataset == "tmn"] <- "Minimum"
     annual_means$dataset[annual_means$dataset == "tmx"] <- "Maximum"
 
-    get_slope <- function(data) {
-        if (all(is.na(data$mean))) {
-            d <- data.frame(c("(Intercept)", "year"), NA, NA)
-        } else {
-            model <- lm(mean ~ year, data=data)
-            d <- data.frame(summary(model)$coefficients[, c(1, 4)])
-            d <- cbind(row.names(d), d)
-        }
-        names(d) <- c('coef', 'estimate', 'p_val')
-        row.names(d) <- NULL
-        return(d)
-    }
-    annual_lm_coefs <- group_by(annual_means, dataset, year) %>%
-        summarize(annual_data=mean(annual_means, na.rm=TRUE)) %>%
-        do(get_slope(.))
+    model <- lm(mean ~ year, data=filter(annual_means, dataset == "Mean"))
+    d <- data.frame(summary(model)$coefficients[, c(1, 4)])
+    d <- cbind(row.names(d), d)
+    names(d) <- c('coef', 'estimate', 'p_val')
+    row.names(d) <- NULL
+    # Convert trend into degrees / decade
+    d <- d[d$coef == "year", ]
+    d$estimate[d$coef == "year"] <- d$estimate[d$coef == "year"] * 10
+    d <- d[!names(d) == "coef"]
+    d <- cbind(name=name, d)
+    return(d)
 
-
-
-
-
-    p2 <- ggplot(filter(annual_means, dataset == "Mean")) +
-
-    p2 <- ggplot(filter(annual_means, dataset == "Mean")) +
-        theme_bw() +
-        geom_line(aes(year, mean), colour="coral3") +
-        xlab('Year') + ylab(expression('Temperature ('*degree*'C)')) +
-        scale_x_continuous(breaks=c(1984, 2000, 2014))
-    ggsave(file.path(out_folder, paste0(name, "_", product, 
-                                        '_meanannual_timeseries_tmponly.png')), p2,
-           width=4, height=2, dpi=PLOT_DPI)
-    ggsave(file.path(out_folder, paste0(name, "_", product, 
-                                        '_meanannual_timeseries_tmponly.eps')), p2,
-           width=4, height=2, dpi=PLOT_DPI)
 }
 
 stopCluster(cl)
