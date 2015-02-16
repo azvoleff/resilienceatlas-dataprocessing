@@ -43,7 +43,7 @@ stopifnot(file_test('-d', shp_folder))
 
 aoi_polygons <- readOGR(shp_folder, 'Analysis_Areas')
 
-temp_stats <- foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
+temp_trends <- temp_stats <- foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
                        .packages=c("rgdal", "lubridate", "dplyr",
                                    "raster", "foreach", "ggplot2",
                                    "scales", "rgeos", "teamlucc"),
@@ -70,7 +70,11 @@ temp_stats <- foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
     d <- d[!names(d) == "coef"]
     d <- cbind(name=name, d)
     return(d)
-
 }
+
+temp_trends$name <- as.character(temp_trends$name)
+temp_trends <- temp_trends[order(temp_trends$name), ]
+
+write.csv(temp_trends, file="temperature_trends.csv", row.names=FALSE)
 
 stopCluster(cl)
