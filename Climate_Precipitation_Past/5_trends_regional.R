@@ -24,7 +24,7 @@ dataset <- 'monthly' # For SPI, use monthly
 
 in_folder <- file.path(prefix, "GRP", "CHIRPS")
 out_folder <- file.path(prefix, "GRP", "CHIRPS")
-shp_folder <- file.path(prefix, "GRP", "Boundaries", "Regional")
+shp_folder <- file.path(prefix, "GRP", "Boundaries")
 stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
 stopifnot(file_test('-d', shp_folder))
@@ -45,35 +45,28 @@ end_date <- as.Date('2013/12/1') # Exclusive
 # accompanying the data
 s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
 
-region_polygons <- readOGR(shp_folder, 'GRP_regions')
+aoi_polygons <- readOGR(shp_folder, 'Analysis_Areas')
+aoi_polygons <- aoi_polygons[aoi_polygons$Type == "Landscape", ]
 
-region_rows <- c(1)
-
-foreach (n=region_rows, .inorder=FALSE,
+foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
          .packages=c("rgdal", "lubridate", "dplyr", "raster",
                      "rgeos", "teamlucc")) %dopar% {
     timestamp()
+    aoi <- aoi_polygons[n, ]
+    name <- as.character(aoi$Name)
+    name <- gsub(' ', '', name)
 
-    aoi <- region_polygons[n, ]
-    region <- as.character(aoi$Region)
-    region <- gsub(' ', '', region)
+    print(paste0("Processing ", name, "..."))
 
-    message('Processing ', region, '...')
-    
-    ###### TEMPORARY
-    in_basename <- file.path(in_folder, paste0(region, ''))
-    #in_basename <- file.path(in_folder, paste0(region, '_CHIRPS'))
-    ###### TEMPORARY
+    in_basename <- file.path(in_folder, paste0(name, '_CHIRPS'))
 
-    out_basename <- file.path(out_folder, paste0(region, '_CHIRPS_',
+    out_basename <- file.path(out_folder, paste0(name, '_CHIRPS_',
                                 format(start_date, "%Y%m"), '-', 
                                 format(end_date, "%Y%m")))
                                   
     chirps_tif <- paste0(in_basename, "_", dataset, '_', 
                          format(chirps_start_date, "%Y%m"), '-', 
                          format(chirps_end_date, "%Y%m"), '.tif')
-
-    chirps_tif <- file.path(in_folder, 'EasternAfrica_v1p8chirps_monthly_198101-201404.tif')
 
     # Calculate the band numbers that are needed
     included_dates <- dates[(dates >= start_date) & (dates <= end_date)]
