@@ -34,7 +34,6 @@ stopifnot(file_test('-d', out_folder))
 shp_folder <- file.path(prefix, "GRP", "Boundaries")
 
 aoi_polygons <- readOGR(shp_folder, 'Analysis_Areas')
-aoi_polygons <- aoi_polygons[aoi_polygons$Type == "Country", ]
 
 spi_period <- 12
 

@@ -13,7 +13,7 @@ library(lubridate)
 
 spi_periods <- c(12)
 
-n_cpus <- 15
+n_cpus <- 20
 
 cl  <- makeCluster(n_cpus)
 registerDoParallel(cl)
@@ -38,7 +38,6 @@ end_date <- as.Date('2014/12/1') # Exclusive
 stopifnot(dataset == "monthly")
 
 aoi_polygons <- readOGR(shp_folder, 'Analysis_Areas')
-aoi_polygons <- aoi_polygons[aoi_polygons$Type == "Country", ]
 
 # Define function to calculate SPI
 calc_spi <- function(chirps_mat, spi_period) {
