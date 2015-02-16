@@ -30,7 +30,6 @@ datasets <- c('tmn', 'tmx', 'tmp')
 s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
 
 aoi_polygons <- readOGR(shp_folder, 'Analysis_Areas')
-aoi_polygons <- aoi_polygons[aoi_polygons$Name %in% c("Bwindi"), ]
 
 foreach (dataset=datasets, .inorder=FALSE,
          .packages=c("teamlucc", "rgeos", "raster", "rgdal")) %dopar% {
