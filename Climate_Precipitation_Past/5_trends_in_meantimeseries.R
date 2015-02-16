@@ -41,7 +41,7 @@ end_date <- as.Date('2014/12/1') # Exclusive
 
 aoi_polygons <- readOGR(shp_folder, 'Analysis_Areas')
 
-foreach (n=aoi_polygons, .inorder=FALSE,
+foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
          .packages=c("rgdal", "lubridate", "dplyr", "raster",
                      "rgeos", "teamlucc")) %dopar% {
     timestamp()
@@ -87,7 +87,7 @@ foreach (n=aoi_polygons, .inorder=FALSE,
         group_by(year) %>%
         summarise(mean_annual=sum(annual, na.rm=TRUE)/sum(!is.na(annual)))
 
-    write.csv(annual_ppt, file=paste0(out_basename, '_', name, 
+    write.csv(annual_ppt, file=paste0(out_basename, 
                                       '_meanannualppt.csv'), row.names=FALSE)
 
 }
