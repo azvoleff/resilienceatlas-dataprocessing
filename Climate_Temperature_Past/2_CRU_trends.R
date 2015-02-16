@@ -1,3 +1,7 @@
+###############################################################################
+# Calculates mean precipitation for GRP countries.
+###############################################################################
+
 source('../0_settings.R')
 
 library(rgdal)
@@ -30,23 +34,25 @@ num_periods <- 12
 start_date <- as.Date('1984/1/1') # Inclusive
 end_date <- as.Date('2014/1/1') # Exclusive
 
-datasets <- c('tmn', 'tmx', 'tmp', 'pet')
+datasets <- c('tmn', 'tmx', 'tmp')
 
 in_folder <- file.path(prefix, "GRP", "CRU")
 out_folder <- file.path(prefix, "GRP", "CRU")
+shp_folder <- file.path(prefix, "GRP", "Boundaries")
 stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
+stopifnot(file_test('-d', shp_folder))
 
-iso_key <- read.csv(file.path('..', "ISO_Codes.csv"))
-
-s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
-
-ISO_2s <- c("ID", "UG", "NE", "ET", "ER")
+aoi_polygons <- readOGR(shp_folder, 'Analysis_Areas')
 
 foreach (dataset=datasets, .inorder=FALSE,
          .packages=c("rgdal", "lubridate", "dplyr", "raster")) %:%
-    foreach (ISO_2=ISO_2s, .inorder=FALSE) %dopar% {
-        filename_base <- paste0(ISO_2, '_', product, '_', dataset, '_')
+    foreach (n=1:nrow(aoi_polygons), .inorder=FALSE) %dopar% {
+        aoi <- aoi_polygons[n, ]
+        name <- as.character(aoi$Name)
+        name <- gsub(' ', '', name)
+
+        filename_base <- paste0(name, '_', product, '_', dataset, '_')
         cru_data_file <- file.path(out_folder,
                               paste0(filename_base, datestring,  '.tif'))
 
@@ -114,14 +120,14 @@ foreach (dataset=datasets, .inorder=FALSE,
                                                           'annual_pval.tif')), 
                     overwrite=TRUE)
 
-        annual_slope_rast_masked <- overlay(annual_slope_rast, annual_p_val_rast,
+        annual_slope_rast <- overlay(annual_slope_rast, annual_p_val_rast,
             fun=function(slp, p) {
-                return(slp * (p < .05))
+                slp[p > .05] <- NA
+                return(slp)
             },
             filename=file.path(out_folder, paste0(filename_base, 
                                                   'annual_slope_masked.tif')),
             overwrite=TRUE)
-
 }
 
 stopCluster(cl)
