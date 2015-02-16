@@ -8,55 +8,44 @@ library(raster)
 library(spatial.tools)
 library(lubridate)
 
-###### TEMPORARY
-# # For monthly data:
-# dataset <- 'monthly' # For SPI, use monthly
-dataset <- 'v1p8chirps_monthly' # For SPI, use monthly
+# For monthly data:
+dataset <- 'monthly' # For SPI, use monthly
 
 in_folder <- file.path(prefix, "GRP", "CHIRPS")
 out_folder <- file.path(prefix, "GRP", "CHIRPS")
-shp_folder <- file.path(prefix, "GRP", "Boundaries", "Regional")
+shp_folder <- file.path(prefix, "GRP", "Boundaries")
 stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
 stopifnot(file_test('-d', shp_folder))
 
-###### TEMPORARY
-# # Note the below code is INCLUSIVE of the start date
-# chirps_start_date <- as.Date('1981/1/1')
-# # Note the below code is INCLUSIVE of the end date
-# chirps_end_date <- as.Date('2014/12/1')
+# Note the below code is INCLUSIVE of the start date
 chirps_start_date <- as.Date('1981/1/1')
-chirps_end_date <- as.Date('2014/4/1')
-###### TEMPORARY
+# Note the below code is INCLUSIVE of the end date
+chirps_end_date <- as.Date('2014/12/1')
 
 yrs <- seq(year(chirps_start_date), year(chirps_end_date))
 dates <- seq(chirps_start_date, chirps_end_date, by='months')
 periods_per_year <- 12
 
-###### TEMPORARY
-# # Select the start and end dates for the data to include in this analysis
-# start_date <- as.Date('1985/1/1') # Inclusive
-# end_date <- as.Date('2014/12/1') # Exclusive
-start_date <- as.Date('1984/1/1')
-end_date <- as.Date('2013/12/1')
-###### TEMPORARY
+# Select the start and end dates for the data to include in this analysis
+start_date <- as.Date('1985/1/1') # Inclusive
+end_date <- as.Date('2014/12/1') # Exclusive
 
-region_polygons <- readOGR(shp_folder, 'GRP_regions')
+aoi_polygons <- readOGR(shp_folder, 'Analysis_Areas')
+aoi_polygons <- aoi_polygons[aoi_polygons$Type == "Landscape", ]
 
-region_rows <- c(1)
-
-foreach (n=region_rows, .inorder=FALSE,
+foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
          .packages=c("rgdal", "lubridate", "dplyr", "raster",
                      "rgeos", "teamlucc")) %do% {
     timestamp()
 
-    aoi <- region_polygons[n, ]
-    region <- as.character(aoi$Region)
-    region <- gsub(' ', '', region)
+    aoi <- aoi_polygons[n, ]
+    name <- as.character(aoi$Name)
+    name <- gsub(' ', '', name)
 
-    message('Processing ', region, '...')
+    message('Processing ', name, '...')
 
-    out_basename <- file.path(out_folder, paste0(region, '_CHIRPS_',
+    out_basename <- file.path(out_folder, paste0(name, '_CHIRPS_',
                                 format(start_date, "%Y%m"), '-', 
                                 format(end_date, "%Y%m")))
 
@@ -102,11 +91,6 @@ foreach (n=region_rows, .inorder=FALSE,
               row.names=FALSE)
     writeRaster(annual_mean_ppt_reclass, 
                 filename=annual_mean_ppt_classifed_file, overwrite=TRUE)
-
-    ##########################################################################
-    ### Temporarily use an alternate data source for pvalues and trends
-    ##########################################################################
-    out_basename <- file.path(out_folder, paste0(region, '_v1p8chirps_monthly'))
 
     ##########################################################################
     # Recode annual mean precipitation

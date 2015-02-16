@@ -41,10 +41,6 @@ periods_per_year <- 12
 start_date <- as.Date('1984/1/1') # Inclusive
 end_date <- as.Date('2013/12/1') # Exclusive
 
-# This is the projection of the CHIRPS files, read from the .hdr files 
-# accompanying the data
-s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
-
 aoi_polygons <- readOGR(shp_folder, 'Analysis_Areas')
 aoi_polygons <- aoi_polygons[aoi_polygons$Type == "Landscape", ]
 

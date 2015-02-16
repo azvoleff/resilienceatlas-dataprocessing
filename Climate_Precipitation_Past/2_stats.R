@@ -23,7 +23,7 @@ dataset <- 'v1p8chirps_monthly' # For SPI, use monthly
 
 in_folder <- file.path(prefix, "GRP", "CHIRPS")
 out_folder <- file.path(prefix, "GRP", "CHIRPS")
-shp_folder <- file.path(prefix, "GRP", "Boundaries", "Regional")
+shp_folder <- file.path(prefix, "GRP", "Boundaries")
 stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
 stopifnot(file_test('-d', shp_folder))
@@ -49,27 +49,21 @@ start_date <- as.Date('1984/1/1')
 end_date <- as.Date('2013/12/1')
 ###### TEMPORARY
 
-region_polygons <- readOGR(shp_folder, 'GRP_regions')
+aoi_polygons <- readOGR(shp_folder, 'Analysis_Areas')
 
-#region_rows <- c(2, 3, 5)
-region_rows <- c(1)
-
-foreach (n=region_rows, .inorder=FALSE,
+foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
          .packages=c('raster', 'rgeos', 'dplyr', 'lubridate',
                      'rgdal')) %do% {
     timestamp()
-    aoi <- region_polygons[n, ]
-    region <- as.character(aoi$Region)
-    region <- gsub(' ', '', region)
+    aoi <- aoi_polygons[n, ]
+    name <- as.character(aoi$Name)
+    name <- gsub(' ', '', name)
 
-    print(paste0("Processing ", region, "..."))
+    print(paste0("Processing ", name, "..."))
 
-    ###### TEMPORARY
-    in_basename <- file.path(in_folder, paste0(region, ''))
-    #in_basename <- file.path(in_folder, paste0(region, '_CHIRPS'))
-    ###### TEMPORARY
+    in_basename <- file.path(in_folder, paste0(name, '_CHIRPS'))
 
-    out_basename <- file.path(out_folder, paste0(region, '_CHIRPS_',
+    out_basename <- file.path(out_folder, paste0(name, '_CHIRPS_',
                                 format(start_date, "%Y%m"), '-', 
                                 format(end_date, "%Y%m")))
                                   
