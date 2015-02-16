@@ -56,7 +56,7 @@ temp_stats <- foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
     aoi <- gBuffer(aoi, width=100000)
     aoi <- spTransform(aoi, CRS('+init=epsg:4326'))
 
-    annual_means <- foreach(dataset=datasets, .combine=rbind) %do% {
+    annual_means <- foreach(dataset=datasets, .combine=rbind) %dopar% {
         filename_base <- paste0(name, '_', product, '_', dataset, '_')
         cru_data_file <- file.path(out_folder,
                               paste0(filename_base, datestring,  '.tif'))
