@@ -22,8 +22,8 @@ registerDoParallel(cl)
 #dataset <- 'pentad'
 dataset <- 'monthly'
 
-in_folder <- file.path(prefix, "CHIRPS", paste0('global_', dataset))
-out_folder <- file.path(prefix, "GRP", "CHIRPS")
+in_folder <- file.path(prefix, "CHIRPS-2.0", paste0('global-', dataset))
+out_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
 shp_folder <- file.path(prefix, "GRP", "Boundaries")
 stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
@@ -57,7 +57,6 @@ gdalbuildvrt(file.path(in_folder, tifs), vrt_file, separate=TRUE,
 s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
 
 aoi_polygons <- readOGR(shp_folder, 'Analysis_Areas')
-aoi_polygons <- aoi_polygons[aoi_polygons$Type == "Landscape", ]
 
 foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
          .packages=c('raster', 'teamlucc', 'rgeos', 'gdalUtils',
