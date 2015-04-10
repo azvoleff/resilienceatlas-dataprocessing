@@ -42,8 +42,6 @@ foreach (dataset=datasets, .inorder=FALSE,
     this_dataset <- stack(ncdf)
     proj4string(this_dataset) <- s_srs
 
-    stopifnot(file_test('-f', ncdf))
-
     for (n in 1:nrow(aoi_polygons)) {
         aoi <- aoi_polygons[n, ]
         name <- as.character(aoi$Name)

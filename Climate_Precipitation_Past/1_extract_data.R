@@ -82,7 +82,7 @@ foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
                                   '_', start_date, '-', end_date))
 
     chirps_tif <- paste0(base_name, '.tif')
-    # Crop tifs for this site
+
     chirps <- gdalwarp(vrt_file, chirps_tif, s_srs=s_srs, te=te, multi=TRUE, 
                        wo=paste0("NUM_THREADS=", warp_threads), overwrite=TRUE, 
                        output_Raster=TRUE)
