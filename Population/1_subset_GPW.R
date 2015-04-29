@@ -1,6 +1,5 @@
 ###############################################################################
-# Crops GPW population data to cover the spatial extent of the ZOI/CSA/PA 
-# boundary of each team site.
+# Crops GPW population data to cover the spatial extent of each geography.
 ###############################################################################
 
 source('../0_settings.R')
