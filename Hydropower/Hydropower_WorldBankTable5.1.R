@@ -25,6 +25,6 @@ ggplot(d, aes(variable, PV, fill=Basin)) +
     theme(axis.title.x=element_blank(),
           legend.position=c(.4, .83)) +
     ylab("Present value (US$, billions)") +
-    scale_fill_brewer()
+    scale_fill_brewer(palette = "Paired") + 
 ggsave("Horn_hydro_PV_under_cc.png", height=4, width=6, dpi=400)
 ggsave("Horn_hydro_PV_under_cc.eps", height=4, width=6, dpi=400)
