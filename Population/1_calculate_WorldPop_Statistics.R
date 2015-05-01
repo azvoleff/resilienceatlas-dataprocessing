@@ -121,15 +121,13 @@ pop_growth$growth_rate <- ((pop_growth$pop_end / pop_growth$pop_start)^(1/5) - 1
 pop_growth$period <- factor(pop_growth$period)
 
 p <- ggplot(pop_growth, aes(x=as.integer(period), y=growth_rate, 
-                            colour=COUNTRY, linetype=COUNTRY, shape=COUNTRY)) +
+                            colour=COUNTRY, shape=COUNTRY)) +
     theme_bw(base_size=10) +
     geom_line() +
     geom_point() +
     scale_x_continuous(breaks=1:length(levels(pop_growth$period)),
                        labels=levels(pop_growth$period)) +
-    scale_linetype_manual(values=rep(1:3, 2)) +
-    scale_colour_manual(values=rep(brewer.pal(3, "Set2"), 2)) +
-    scale_shape_manual(values=rep(1:3, each=2)) +
+    scale_colour_manual(values=rep(brewer.pal(3, "Paired"), 2)) +
     xlab("Period") + ylab("Annual rate of population growth") +
     ylim(c(0, 4.5)) +
     theme(legend.title=element_blank(),
