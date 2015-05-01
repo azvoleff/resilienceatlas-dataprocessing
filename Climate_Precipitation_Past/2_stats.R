@@ -77,6 +77,11 @@ foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
 
     chirps <- stack(chirps_tif, bands=band_nums)
 
+    calc_tot <- function(
+    out <- rasterEngine(t1p=t1p, t2p=t2p, fun=calc_chg_dir_st, 
+                        args=list(n_classes=n_classes), outbands=1, 
+                        datatype='INT2S', ...)
+
     # Setup a dataframe with the precipitation data so anomalies, etc can be 
     # calculated
     years <- year(included_dates)
