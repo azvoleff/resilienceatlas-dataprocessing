@@ -1,0 +1,334 @@
+Sea-Level Rise and Storm Surges: Potential Impact on Cities by 2100,,,,,
+"Detailed results from Table 6, CGD Working Paper: ""Climate Change and the Future Impacts of Storm-Surge Disasters in Developing Countries"", by Susmita Dasgupta, Benoit Laplante, Siobhan Murray and David Wheeler",,,,,
+Paper available at http://www.cgdev.org/content/publications/detail/1422836/,,,,,
+See p. 14 of the paper for detailed discussion of the results below.,,,,,
+Basic assumptions: 1 meter sea-level rise; 10% increase in the intensity of a 1-in-100-year storm; UN medium population projections,,,,,
+Rank,Country,City,Increase by 2100 in Population Exposed to Storm Surges,Cumulative % of Total Increase in Exposed Population,Global City Population Rank in 2000
+Rank,Country,City,Inc_Pop,Inc_Pct,Pop_Rank
+1,Philippines,Manila,"3,438,334",11.8,8
+2,Egypt,Al-Iskandariyah (Alexandria),"2,723,464",21.2,18
+3,Nigeria,Lagos,"2,121,263",28.5,2
+4,Liberia,Monrovia,"1,751,428",34.5,61
+5,Pakistan,Karachi,"1,417,639",39.4,6
+6,Yemen,Aden,"1,235,473",43.6,132
+7,Indonesia,Jakarta,"836,130",46.5,7
+8,Egypt,Bur Sa'id (Port Said),"672,210",48.8,146
+9,Bangladesh,Khulna,"635,950",51.0,56
+10,India,Kolkata (Calcutta),"547,004",52.9,3
+11,Thailand,Krung Thep (Bangkok),"546,157",54.8,13
+12,Cote d'Ivoire,Abidjan,"543,928",56.6,25
+13,Benin,Cotonou,"491,049",58.3,100
+14,Bangladesh,Chittagong,"489,789",60.0,22
+15,Viet Nam,Thanh Pho Ho Chi Minh (Saigon-Cholon),"433,176",61.5,16
+16,Myanmar,Yangon,"384,381",62.8,17
+17,Guinea,Conakry,"383,551",64.1,46
+18,Angola,Luanda,"346,973",65.3,33
+19,Brazil,Rio de Janeiro,"344,034",66.5,9
+20,Senegal,Dakar,"299,405",67.5,40
+21,Nigeria,Warri,"266,667",68.5,140
+22,Somalia,Mogadishu,"235,670",69.3,71
+23,Philippines,Taguig,"232,703",70.1,147
+24,Nigeria,Port Harcourt,"222,714",70.8,84
+25,Philippines,Kalookan,"212,853",71.6,74
+26,Colombia,Barranquilla,"181,864",72.2,48
+27,Tunisia,Tunis,"160,176",72.7,44
+28,India,Chennai (Madras),"156,149",73.3,15
+29,Djibouti,Djibouti,"154,831",73.8,134
+30,Sudan,Bur Sudan,"153,567",74.3,168
+31,Argentina,Buenos Aires,"150,940",74.9,5
+32,Mozambique,Maputo,"137,977",75.3,27
+33,Malaysia,Kelang,"132,405",75.8,119
+34,Lao People's Dem Rep,Vientiane,"127,770",76.2,108
+35,Guinea-Bissau,Bissau,"127,610",76.7,203
+36,Philippines,Davao,"119,101",77.1,72
+37,Peru,Lima,"117,741",77.5,12
+38,Cameroon,Douala,"115,466",77.9,51
+39,Yemen,Al-Hudaydah,"115,304",78.3,169
+40,Tanzania,Dar es Salaam,"112,163",78.7,35
+41,Mozambique,Beira,"111,202",79.1,152
+42,Indonesia,Ujungpandang,"107,612",79.4,82
+43,Philippines,Butuan,"102,901",79.8,211
+44,Yemen,Al-Makalla,"97,202",80.1,292
+45,Bangladesh,Bakerganj,"97,056",80.4,217
+46,Ghana,Accra,"94,911",80.8,42
+47,Morocco,Rabat,"93,405",81.1,54
+48,Philippines,Malabon,"89,497",81.4,180
+49,Morocco,Kenitra,"88,837",81.7,183
+50,Philippines,Iloilo,"87,548",82.0,176
+51,Morocco,Casablanca,"86,496",82.3,23
+52,Nigeria,Okrika,"86,069",82.6,353
+53,Argentina,La Plata,"84,097",82.9,121
+54,Venezuela,Maracaibo,"82,628",83.2,43
+55,Indonesia,Surabaya,"81,921",83.5,34
+56,Madagascar,Mahajanga,"80,353",83.7,333
+57,Nigeria,Bugama,"78,801",84.0,348
+58,Mozambique,Quelimane,"77,646",84.3,276
+59,Indonesia,Pontianak,"76,033",84.5,138
+60,Philippines,Cotabato,"75,131",84.8,281
+61,Brazil,Recife,"74,291",85.0,24
+62,Philippines,Paranaque,"70,970",85.3,151
+63,Colombia,Cartagena,"70,608",85.5,93
+64,Indonesia,Tegal,"70,569",85.8,206
+65,Sierra Leone,Freetown,"69,803",86.0,85
+66,Indonesia,Semarang,"63,032",86.2,96
+67,Brazil,Aracaju,"61,607",86.4,150
+68,Brazil,Porto Alegre,"60,901",86.6,20
+69,Viet Nam,Da Nang,"60,163",86.9,154
+70,Brazil,Vitoria,"60,071",87.1,63
+71,Malaysia,Kuala Terengganu,"59,098",87.3,221
+72,Senegal,Saint-Louis,"56,398",87.5,302
+73,Philippines,Zamboanga,"55,664",87.7,114
+74,Philippines,San Jose,"54,858",87.8,370
+75,Panama,Ciudad de Panama,"53,462",88.0,76
+76,Philippines,Dagupan,"53,102",88.2,326
+77,Congo,Pointe Noire,"52,798",88.4,131
+78,Philippines,Bago,"50,653",88.6,309
+79,Philippines,Quezon City,"49,798",88.7,38
+80,Philippines,Roxas,"49,593",88.9,336
+81,Egypt,"As-Suways (Suez, Sues)","48,735",89.1,158
+82,Morocco,Agadir,"44,855",89.2,115
+83,Philippines,Naga,"44,774",89.4,316
+84,Philippines,Cadiz,"44,391",89.5,307
+85,Gambia,Bathurst,"43,350",89.7,248
+86,Malaysia,Kota Baharu,"42,387",89.8,230
+87,Morocco,Tetouan,"41,198",90.0,187
+88,Philippines,Tacloban,"40,206",90.1,265
+89,Indonesia,Samarinda,"39,908",90.2,137
+90,Angola,Lobito,"39,761",90.4,321
+91,Dominican Rep,Santo Domingo,"39,705",90.5,21
+92,Malaysia,Miri,"39,010",90.7,313
+93,Viet Nam,Rach Gia,"38,741",90.8,255
+94,Philippines,Cebu,"37,665",90.9,99
+95,Philippines,Cagayan de Oro,"37,565",91.0,149
+96,Brazil,Salvador,"37,435",91.2,26
+97,"Korea, Rep",Seoul,"36,790",91.3,10
+98,Brazil,Joao Pessoa,"36,150",91.4,91
+99,Mexico,Acapulco (de Juarez),"36,118",91.5,110
+100,Brazil,Santos,"35,859",91.7,68
+101,Malaysia,Kuching,"35,810",91.8,295
+102,Brazil,Natal,"35,570",91.9,83
+103,Malaysia,Kuantan,"34,653",92.0,201
+104,Venezuela,Barcelona,"34,527",92.2,190
+105,China,Zhongshan,"33,996",92.3,66
+106,Philippines,Valenzuela,"32,610",92.4,141
+107,Indonesia,Medan,"32,529",92.5,45
+108,Viet Nam,Thanh Hoa,"32,436",92.6,379
+109,Mexico,Tampico,"31,630",92.7,194
+110,Philippines,Navotas,"30,708",92.8,233
+111,Indonesia,Pekalongan,"30,237",92.9,223
+112,Iraq,Az-Zubayr,"29,314",93.0,294
+113,Mozambique,Xai-Xai,"29,188",93.1,360
+114,Argentina,Bahia Blanca,"28,374",93.2,202
+115,Mexico,Ciudad del Carmen,"28,115",93.3,337
+116,Bangladesh,Cox's Bazar,"28,100",93.4,376
+117,Viet Nam,Hue,"27,968",93.5,212
+118,Colombia,Buenaventura,"27,515",93.6,186
+119,Brazil,Maceio,"27,196",93.7,88
+120,Malaysia,Sandakan,"26,633",93.8,237
+121,Philippines,Pagadian,"26,065",93.9,306
+122,Indonesia,Pemalang,"25,456",94.0,366
+123,Philippines,Lapu-Lapu,"24,861",94.1,239
+124,Angola,Benguela,"24,586",94.1,329
+125,India,Thane,"23,994",94.2,55
+126,Mexico,Mazatlan,"23,941",94.3,184
+127,Cote d'Ivoire,San-Pedro,"23,915",94.4,329
+128,Philippines,San Carlos (Negros Occ.),"23,700",94.5,352
+129,Brazil,Pelotas,"22,909",94.5,191
+130,Philippines,Bacolod,"22,809",94.6,156
+131,Tanzania,Mtwara,"22,506",94.7,325
+132,Brazil,Rio Grande,"22,498",94.8,264
+133,Philippines,Calbayog,"22,460",94.9,297
+134,India,Kakinada,"21,808",94.9,174
+135,Venezuela,Cumana,"21,706",95.0,210
+136,Senegal,Mbour,"21,070",95.1,342
+137,Philippines,San Fernando,"20,797",95.2,385
+138,Venezuela,Puerto Cabello,"20,741",95.2,275
+139,Malaysia,Bukit Mertajam,"20,368",95.3,243
+140,Myanmar,Akyab,"20,244",95.4,284
+141,Gabon,Libreville (incl. Peripherie),"20,114",95.4,127
+142,Viet Nam,Nha Trang,"20,038",95.5,214
+143,Mexico,Cancun,"19,935",95.6,165
+144,Bangladesh,Chandpur,"19,742",95.6,347
+145,Philippines,Toledo,"19,619",95.7,312
+146,Tanzania,Tanga,"19,299",95.8,247
+147,Ecuador,Machala,"18,835",95.8,242
+148,Brazil,Florianopolis,"18,634",95.9,188
+149,Indonesia,Cirebon,"18,522",96.0,195
+150,Brazil,Fortaleza,"18,360",96.0,28
+151,Morocco,Tanger,"18,140",96.1,118
+152,Malaysia,Alor Setar,"18,123",96.2,356
+153,Indonesia,Cilacap,"17,353",96.2,218
+154,Suriname,Paramaribo,"17,343",96.3,241
+155,Papua New Guinea,Port Moresby,"17,149",96.3,192
+156,India,Jamnagar,"17,124",96.4,120
+157,Philippines,Sagay,"16,946",96.4,331
+158,Brazil,Sao Luis,"16,893",96.5,86
+159,India,Pondicherry,"16,429",96.6,133
+160,Peru,Chiclayo,"16,028",96.6,142
+161,Philippines,Ormoc,"15,880",96.7,293
+162,Colombia,Santa Marta,"15,295",96.7,175
+163,Bangladesh,Satkhira,"15,200",96.8,388
+164,Tunisia,Sfax,"15,156",96.8,216
+165,Viet Nam,Vinh,"14,951",96.9,390
+166,Peru,Trujillo,"14,603",96.9,116
+167,Venezuela,Cabimas,"13,994",97.0,240
+168,"Korea, Rep",Gimhae,"13,841",97.0,257
+169,Morocco,Mohammedia,"13,733",97.1,256
+170,Jamaica,Kingston,"13,707",97.1,89
+171,Indonesia,Padang,"13,640",97.2,111
+172,Malaysia,Kota Kinabalu,"13,639",97.2,299
+173,Philippines,Lucena,"13,634",97.3,250
+174,Venezuela,Ciudad Ojeda,"13,603",97.3,377
+175,Philippines,Pasay,"13,601",97.4,178
+176,China,Ningbo,"13,489",97.4,76
+177,Brazil,Joinville (Joinvile),"13,334",97.4,160
+178,Malaysia,Tawau,"12,821",97.5,299
+179,Malaysia,Sungai Petani,"12,369",97.5,273
+180,Philippines,Surigao,"12,252",97.6,350
+181,India,Visakhpatnam,"11,604",97.6,49
+182,Tunisia,Susah,"11,514",97.7,298
+183,"Korea, Rep",Seognam (Seongnam),"10,821",97.7,60
+184,Chile,Concepcion (incl. San Pedro del la Paz),"10,790",97.7,173
+185,Viet Nam,Hai Phong,"10,748",97.8,50
+186,Chile,Valdivia,"10,631",97.8,340
+187,Philippines,Iligan,"10,459",97.8,199
+188,Myanmar,Mawlamyine,"10,335",97.9,177
+189,Chile,Talcahuano,"10,319",97.9,207
+190,Malaysia,George Town,"10,308",97.9,263
+191,Thailand,Nakhon Si Thammarat,"10,153",98.0,349
+192,Malaysia,Malacca,"10,014",98.0,262
+193,Philippines,Legazpi,"9,861",98.0,291
+194,"Iran, Islamic Rep",Bandar-e Abbas,"9,835",98.1,208
+195,Indonesia,Talang,"9,637",98.1,324
+196,Thailand,Phra Pradaeng,"9,471",98.1,279
+197,Brazil,Itajai,"9,365",98.2,308
+198,Argentina,Trelew,"9,362",98.2,387
+199,Myanmar,Mergui,"9,353",98.2,305
+200,Bangladesh,Noakhali,"9,309",98.3,378
+201,Malaysia,Johor Baharu,"9,085",98.3,167
+202,Mexico,Campeche,"8,976",98.3,254
+203,Malaysia,Shah Alam,"8,797",98.4,189
+204,"Korea, Rep",Changweon,"8,769",98.4,143
+205,India,Mangalore,"8,724",98.4,125
+206,Philippines,Silay,"8,644",98.5,371
+207,Morocco,Nador,"8,623",98.5,364
+208,Chile,Vina del Mar (incl. Concon),"8,558",98.5,181
+209,Brazil,Araraquara,"8,163",98.5,271
+210,Indonesia,Balikpapan,"8,048",98.6,157
+211,China,Yuyao,"7,990",98.6,92
+212,India,Thiruvananthapuram (Trivandrum),"7,857",98.6,70
+213,Philippines,Mandaue,"7,608",98.7,215
+214,Brazil,Nossa Senhora do Socorro,"7,504",98.7,327
+215,India,Kochi (Cochin),"7,332",98.7,47
+216,Thailand,Nonthanburi,"7,294",98.7,196
+217,Philippines,Gingoog,"7,290",98.8,383
+218,Indonesia,Banda Aceh,"7,272",98.8,219
+219,Dominican Rep,San Pedro de Macoris,"7,133",98.8,287
+220,Philippines,Dumaguete,"7,048",98.8,384
+221,Indonesia,Bengkulu,"6,999",98.9,220
+222,Tanzania,Zanzibar,"6,931",98.9,226
+223,Tunisia,Ariana,"6,627",98.9,266
+224,Philippines,Marikina,"6,585",98.9,166
+225,Tunisia,Binzart,"6,553",98.9,368
+226,Indonesia,Adiwerna,"6,491",99.0,386
+227,Argentina,Mar del Plata,"6,491",99.0,117
+228,Brazil,Cabo Frio,"6,457",99.0,375
+229,Venezuela,Puerto la Cruz (incl. Pozuelos),"6,425",99.0,245
+230,Mexico,Minatitlan,"6,384",99.1,367
+231,Tunisia,Gabes,"6,156",99.1,373
+232,Mexico,Boca del Rio,"6,126",99.1,341
+233,India,Surat,"6,126",99.1,36
+234,Brazil,Sao Jose,"6,051",99.1,278
+235,Ecuador,Esmeraldas,"6,037",99.2,328
+236,"Korea, Rep",Iksan (Iri),"5,981",99.2,222
+237,Indonesia,Taman (Jawa Tengah),"5,717",99.2,382
+238,Mexico,Villahermosa,"5,446",99.2,182
+239,Philippines,General Santos,"5,179",99.2,161
+240,Viet Nam,Vung Tau,"5,141",99.3,266
+241,China,Qingdao,"5,137",99.3,37
+242,Philippines,Batangas,"5,074",99.3,225
+243,"Korea, Rep",Ulsan,"4,901",99.3,62
+244,Brazil,Macae,"4,843",99.3,339
+245,Brazil,Paranagua,"4,735",99.3,343
+246,Viet Nam,Qui Nhon,"4,732",99.4,253
+247,Mexico,Puerto Vallarta,"4,713",99.4,296
+248,India,Kollam (Quilon),"4,704",99.4,170
+249,Malaysia,Taiping,"4,667",99.4,259
+250,Honduras,La Ceiba,"4,651",99.4,368
+251,Venezuela,Coro (Sta. Ana de Coro),"4,640",99.4,288
+252,Viet Nam,Phan Thiet,"4,569",99.5,314
+253,Uruguay,Montevideo,"4,274",99.5,69
+254,India,Bhiwandi,"4,172",99.5,109
+255,Dominican Rep,La Romana,"4,171",99.5,261
+256,Mozambique,Nacala,"4,127",99.5,268
+257,Indonesia,Cilegon - Merak,"4,127",99.5,302
+258,Thailand,Surat Thani,"3,997",99.5,361
+259,China,Wenzhou,"3,907",99.6,52
+260,Madagascar,Toamasina,"3,825",99.6,280
+261,Brazil,Ilheus,"3,774",99.6,283
+262,India,Vadodara (Baroda),"3,650",99.6,53
+263,Philippines,Olongapo,"3,627",99.6,251
+264,Indonesia,Kudus,"3,515",99.6,355
+265,China,Panjin,"3,497",99.6,124
+266,Mexico,Cheturnal,"3,410",99.6,346
+267,Mexico,Culiacan,"3,302",99.7,123
+268,Philippines,Muntinlupa,"3,289",99.7,171
+269,"Korea, Rep",Pusan,"3,254",99.7,19
+270,Lebanon,Beirut,"3,243",99.7,41
+271,Indonesia,"Tanjungkarang (T.-Telukbetunk, Bandar Lampun","3,238",99.7,98
+272,Indonesia,Lhokseumawe,"3,155",99.7,319
+273,Chile,La Serena,"3,125",99.7,334
+274,Indonesia,Banyuwangi,"3,072",99.7,363
+275,India,Thoothukkudi (Tuticorin),"3,069",99.7,228
+276,Morocco,El-Jadida,"3,031",99.7,332
+277,Venezuela,Punto Fijo,"3,025",99.8,365
+278,India,Bhavnagar (Bhaunagar),"2,975",99.8,130
+279,China,Taicheng,"2,474",99.8,86
+280,China,Jinzhou,"2,458",99.8,94
+281,India,Nellore,"2,416",99.8,172
+282,Viet Nam,Hong Gai,"2,380",99.8,311
+283,Chile,Coquimbo,"2,358",99.8,322
+284,Philippines,San Juan,"2,317",99.8,354
+285,Myanmar,Dawei,"2,297",99.8,359
+286,Peru,Talara,"2,173",99.8,389
+287,Indonesia,Probolinggo,"2,154",99.8,289
+288,Mexico,Veracruz,"2,129",99.8,162
+289,Syrian Arab Rep,Tartus,"2,120",99.9,310
+290,"Korea, Rep",Pyongtaek,"2,060",99.9,236
+291,Chile,Puerto Montt,"2,057",99.9,320
+292,Philippines,Antipolo,"2,048",99.9,145
+293,Brazil,Teresopolis,"1,883",99.9,357
+294,Brazil,Angra dos Reis,"1,861",99.9,358
+295,Indonesia,Ambon,"1,761",99.9,213
+296,"Korea, Rep",Cheonan,"1,636",99.9,229
+297,Sri Lanka,Kotte,"1,594",99.9,334
+298,India,Brahmapur (Berhampur),"1,565",99.9,197
+299,China,Taizhou (J+H),"1,516",99.9,57
+300,Peru,Chincha Alta,"1,509",99.9,338
+301,Chile,Arica,"1,493",99.9,260
+302,Lebanon,Tripoli,"1,421",99.9,244
+303,Viet Nam,Cam Pha,"1,419",99.9,317
+304,Philippines,Mandaluyong,"1,329",99.9,205
+305,Brazil,Braganca Paulista,"1,253",99.9,362
+306,Viet Nam,Cam Ranh,"1,204",100.0,315
+307,Indonesia,Pasuruan,"1,163",100.0,285
+308,China,Jiaxing,"1,136",100.0,95
+309,Thailand,Hat Yai,"1,130",100.0,258
+310,Argentina,Comodoro Rivadavia,"1,022",100.0,304
+311,Venezuela,Carupano,989,100.0,345
+312,Brazil,Petropolis,976,100.0,209
+313,Sri Lanka,Moratuwa,897,100.0,246
+314,China,Shaoxing,853,100.0,185
+315,China,Nantong,769,100.0,107
+316,Venezuela,Petare,764,100.0,129
+317,Sri Lanka,Dehiwala-Mount Lavinia,720,100.0,238
+318,Russian Federation,Vladivostok,667,100.0,112
+319,Indonesia,Palu,650,100.0,270
+320,Chile,Valparaiso,524,100.0,200
+321,"Korea, Rep",Tonghae (Donghae),361,100.0,380
+322,Chile,Iquique,344,100.0,273
+323,Chile,Antofagasta,332,100.0,224
+324,Ecuador,Manta,315,100.0,277
+325,Venezuela,Catia La Mar,230,100.0,351
+326,Chile,Punta Arenas,169,100.0,344
+327,Lebanon,Saida,109,100.0,301
