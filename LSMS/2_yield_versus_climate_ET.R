@@ -19,6 +19,8 @@ library(ggplot2)
 library(lme4)
 library(lubridate)
 
+PLOT_DPI <- 600
+
 base_dir <- "O:/Data/Vital Signs/LSMS_Data"
 
 lsms_folder <- file.path(prefix, "LSMS")
