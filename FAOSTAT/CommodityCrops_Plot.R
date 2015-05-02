@@ -112,7 +112,7 @@ ps <- foreach(country=levels(top5$Country)) %do% {
         ggtitle(country) +
         guides(fill=FALSE) +
         scale_fill_manual(values=rev(brewer.pal(5,"Blues"))) +
-        ylab("Value (US$, millions)") +
+        ylab("Import value (US$, millions)") +
         theme(axis.title.x=element_blank())
 }
 p <- arrangeGrob(ps[[1]], ps[[2]], ps[[3]], ps[[4]], ps[[5]], ps[[6]], 
@@ -122,14 +122,14 @@ ggsave(paste0('imports_HornCountries.eps'), p, dpi=300, width=8, height=6)
 
 ggplot(filter(top5_Horn, Element == "Import Value"),
        aes(reorder(Item, rank), Value/1000, fill=factor(rank))) +
-    theme_bw() +
+    theme_bw(base_size=16) +
     geom_bar(stat="identity", position="dodge") +
     guides(fill=FALSE) +
     scale_fill_manual(values=rev(brewer.pal(5,"Blues"))) +
-    ylab("Value (US$, millions)") +
+    ylab("Import value (US$, millions)") +
     theme(axis.title.x=element_blank())
 ggsave(paste0('imports_HornAll.png'), dpi=300, width=8, height=6)
-ggsave(paste0('imports_Horn.eps'), dpi=300, width=8, height=6)
+ggsave(paste0('imports_HornAll.eps'), dpi=300, width=8, height=6)
 
 ###############################################################################
 ### Plot Exports
@@ -142,7 +142,7 @@ ps <- foreach(country=levels(top5$Country)) %do% {
         ggtitle(country) +
         guides(fill=FALSE) +
         scale_fill_manual(values=rev(brewer.pal(5,"Blues"))) +
-        ylab("Value (US$, millions)") +
+        ylab("Export value (US$, millions)") +
         theme(axis.title.x=element_blank())
 }
 p <- arrangeGrob(ps[[1]], ps[[2]], ps[[3]], ps[[4]], ps[[5]], ps[[6]], 
@@ -152,11 +152,41 @@ ggsave(paste0('exports_HornCountries.eps'), p, dpi=300, width=8, height=6)
 
 ggplot(filter(top5_Horn, Element == "Export Value"),
        aes(reorder(Item, rank), Value/1000, fill=factor(rank))) +
-    theme_bw() +
+    theme_bw(base_size=16) +
     geom_bar(stat="identity", position="dodge") +
     guides(fill=FALSE) +
     scale_fill_manual(values=rev(brewer.pal(5,"Blues"))) +
-    ylab("Value (US$, millions)") +
+    ylab("Export value (US$, millions)") +
     theme(axis.title.x=element_blank())
 ggsave(paste0('exports_HornAll.png'), dpi=300, width=8, height=6)
-ggsave(paste0('exports_Horn.eps'), dpi=300, width=8, height=6)
+ggsave(paste0('exports_HornAll.eps'), dpi=300, width=8, height=6)
+
+###############################################################################
+### Plot Production
+ps <- foreach(country=levels(top5$Country)) %do% {
+    this_d <- filter(top5, Element == "Production", Country == country)
+    ggplot(this_d,
+           aes(reorder(Item, rank), Value/1000, fill=factor(rank))) +
+        theme_bw(base_size=8) +
+        geom_bar(stat="identity", position="dodge") +
+        ggtitle(country) +
+        guides(fill=FALSE) +
+        scale_fill_manual(values=rev(brewer.pal(5,"Blues"))) +
+        ylab("Production (metric tons)") +
+        theme(axis.title.x=element_blank())
+}
+p <- arrangeGrob(ps[[1]], ps[[2]], ps[[3]], ps[[4]], ps[[5]], ps[[6]], 
+                 ncol=3)
+ggsave(paste0('productions_HornCountries.png'), p, dpi=300, width=8, height=6)
+ggsave(paste0('productions_HornCountries.eps'), p, dpi=300, width=8, height=6)
+
+ggplot(filter(top5_Horn, Element == "Production"),
+       aes(reorder(Item, rank), Value, fill=factor(rank))) +
+    theme_bw(base_size=16) +
+    geom_bar(stat="identity", position="dodge") +
+    guides(fill=FALSE) +
+    scale_fill_manual(values=rev(brewer.pal(5,"Blues"))) +
+    ylab("Production (metric tons)") +
+    theme(axis.title.x=element_blank())
+ggsave(paste0('productions_HornAll.png'), dpi=300, width=8, height=6)
+ggsave(paste0('productions_HornAll.eps'), dpi=300, width=8, height=6)
