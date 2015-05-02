@@ -20,7 +20,7 @@ d$variable <- ordered(d$variable,
 # This is plotting the present value of planned hydro and irrigation expansion 
 # revenues over the 2015 to 2050 period in billions of US $
 ggplot(d, aes(variable, PV, fill=Basin)) +
-    theme_bw() +
+    theme_bw(base_size=10) +
     geom_bar(stat="identity", position="dodge") +
     theme(axis.title.x=element_blank(),
           legend.position=c(.4, .83)) +
