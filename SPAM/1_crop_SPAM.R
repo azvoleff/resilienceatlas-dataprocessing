@@ -5,7 +5,6 @@ library(raster)
 library(gdalUtils)
 
 in_folder <- file.path(prefix, "GRP", "SPAM")
-in_folder <- file.path(prefix, "GRP", "SPAM")
 out_folder <- file.path(prefix, "GRP", "SPAM")
 shp_folder <- file.path(prefix, "GRP", "Boundaries")
 stopifnot(file_test('-d', in_folder))
