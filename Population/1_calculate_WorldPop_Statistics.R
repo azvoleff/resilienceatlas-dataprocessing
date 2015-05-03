@@ -32,7 +32,6 @@ d$Gender <- gsub('_', '', str_extract(d$VARIABLE, "(_F$)|_M$()"))
 filter(d, !(Category %in%c("TOTAL", "WOCBA"))) %>%
     select(COUNTRY, year, SUM, Category, Gender) -> d_age
 
-
 d_age$lower <- as.numeric(gsub('A', '', str_extract(d_age$Category, "[0-9]{2}")))
 d_age$upper <- as.numeric(str_extract(d_age$Category, "[0-9]{2}$"))
 d_age$upper[is.na(d_age$upper)] <- "+"
