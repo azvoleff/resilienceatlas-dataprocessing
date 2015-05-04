@@ -1,7 +1,7 @@
+source('../0_settings.R')
+
 library(RJSONIO)
 library(dplyr)
-
-source('../0_settings.R')
 
 ###############################################################################
 ### Pick variables
@@ -24,8 +24,6 @@ grep_list <- function(x) {
     return(indicator_list[(def_rows | label_rows), 1:3])
 }
 
-grep_list('water')
-
 ###############################################################################
 ###  Build indicator
 
@@ -45,13 +43,23 @@ get_indic <- function(indicator_IDs, ccs) {
     indicators_string <- paste0("indicatorIds=", paste(indicator_IDs, collapse=","))
     api_base <- "http://api.dhsprogram.com/rest/dhs/data?breakdown=subnational&APIkey=CVINTL-877527&perpage=5000"
     api_call <- paste0(api_base, "&", indicators_string, "&", cc_string, "&f=json")
-    json_file <- fromJSON(api_call)
-    # Unlist the JSON file entries
-    d <- lapply(json_file$Data, function(x) {unlist(x)})
-    # Convert JSON input to a data frame
-    d <- as.data.frame(do.call("rbind", d), stringsAsFactors=FALSE)
+    # Make repeated calls to retrieve all records as there is a 5000 record 
+    # limit per request
+    nrecs <- 5000
+    i <- 1
+    while (nrecs == 5000) {
+        this_call <- paste0(api_call, '&page=', i)
+        json_file <- fromJSON(this_call)
+        # Unlist the JSON file entries
+        this_d <- lapply(json_file$Data, function(x) {unlist(x)})
+        # Convert JSON input to a data frame
+        this_d <- as.data.frame(do.call("rbind", this_d), stringsAsFactors=FALSE)
+        if (i == 1) d <- this_d
+        else d <- rbind(d, this_d)
+        nrecs <- nrow(this_d)
+        i <-  i + 1
+    }
     d <- tbl_df(d)
-    return(d)
 }
 
 buff_indic <- c(214527002, # Children stunted
@@ -60,37 +68,66 @@ buff_indic <- c(214527002, # Children stunted
                 120147001) # Household size)
 #TODO: Make assets index
 buff <- get_indic(buff_indic, ccs)
-stopifnot(nrow(buff) < 5000)
 buff$Facet <- "Buffer capacity"
 unique(buff$Indicator)
+
+#TODO: Make assets index
+own_indic <-  c('9124001', # Households possessing a radio
+                '9124002', # Households possessing a television
+                '9124003', # Households possessing a telephone
+                '9124004', # Households possessing a refrigerator
+                '9124005', # Households possessing a bicycle
+                '9124006', # Households possessing a motorcycle
+                '9124007', # Households possessing a private car
+                '9124008') # Households possessing none of the previous possessions
+own <- get_indic(own_indic, ccs)
+own$Facet <- "own"
+unique(own$Indicator)
+
+#TODO: Figure out wealth - doesn't appear to be available from the API
+# wealth_indic <- c('10485001', # Women in the lowest wealth quintile
+#                   '10485002', # Women in the second wealth quintile
+#                   '10485003', # Women in the middle wealth quintile
+#                   '10485004', # Women in the fourth wealth quintile
+#                   '10485005', # Women in the highest wealth quintile
+#                   '152485001', # Men in the lowest wealth quintile
+#                   '152485002', # Men in the second wealth quintile
+#                   '152485003', # Men in the middle wealth quintile
+#                   '152485004', # Men in the fourth wealth quintile
+#                   '152485005') # Men in the highest wealth quintile
+# wealth <- get_indic(wealth_indic, ccs)
+# wealth$Facet <- "wealth"
+# unique(wealth$Indicator)
+
+tfr_indic <-  c(19170000, # Total fertility rate for 15-49
+                216236002, # Unmet need for contraception
+                20171000) # Total fertility rate
+tfr <- get_indic(tfr_indic, ccs)
+tfr$Facet <- "TFR"
+unique(tfr$Indicator)
 
 sorg_indic <- c(8139010, # Piped water
                 8142001) # Access to electricity
 sorg <- get_indic(sorg_indic, ccs)
-stopifnot(nrow(sorg) < 5000)
 sorg$Facet <- "Self-organization"
 unique(sorg$Indicator)
 
 learn_indic <- c(127383002, # women who are literate
                  7135002, # pop 6-15 who are attending school
-                 9124003, # households possessing a phone
                  13126005) # percentage women with access to newspaper, television, and radio at least once per week
 learn <- get_indic(learn_indic, ccs)
-stopifnot(nrow(learn) < 5000)
 learn$Facet <- "Capacity for learning"
 unique(learn$Indicator)
 
 indic <- full_join(buff, sorg)
 indic <- full_join(indic, learn)
-
-table(indic$CountryName == "Niger")
-table(indic$CountryName == "Niger", indic$SurveyYear)
+indic <- full_join(indic, tfr)
+indic <- full_join(indic, own)
+# indic <- full_join(indic, wealth)
 
 indic$SurveyYear <- as.numeric(indic$SurveyYear)
 
 indic <- indic[indic$SurveyYear >= 2002, ]
-table(indic$SurveyYear)
-table(indic$CountryName)
 
 dim(indic)
 # Drop all but most recent survey data, and take mean when both men/women are 
@@ -101,20 +138,12 @@ indic <- group_by(indic, CountryName) %>%
              Indicator, IndicatorId, RegionId, CharacteristicLabel) %>%
     summarize(Value=mean(as.numeric(Value)))
 dim(indic)
-table(indic$SurveyYear)
-table(indic$CountryName)
-
-hist(indic$SurveyYear)
 
 # Add in my region names
 indic <- left_join(indic, dplyr::select(grp_list, DHS_CountryCode, Region))
 
 # Make the income variables a sum
     
-# 10485003, # Percent in middle wealth quintile or above (women)
-# 10485004, # Percent in fourth quintile or above (women)
-# 10485005) # Percent in highest quintile or above (women)
-
 names(indic)[names(indic) == "Region"] <- "RegionGRP"
 
 save(indic, file=file.path(prefix, "GRP", 
