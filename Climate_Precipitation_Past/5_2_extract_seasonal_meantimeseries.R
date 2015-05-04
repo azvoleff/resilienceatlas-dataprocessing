@@ -165,7 +165,7 @@ foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
         #     do(fit=lm(total ~ year, data=.))
         # seasonal_fits <- tidy(seasonal_pixel_fits, fit)
 
-        this_basename <- paste0(out_basename, '_', paste(season, collapse))
+        this_basename <- paste0(out_basename, '_', paste(season, collapse=''))
         season_total_rast <- brick(chirps, values=FALSE, nl=n_years)
         season_total_rast <- setValues(season_total_rast,
                                        matrix(this_seasonal_ppt$total, 
@@ -179,13 +179,16 @@ foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
         seasonal_lm_coefs <- group_by(this_seasonal_ppt, pixel) %>%
             mutate(total=total - mean(total)) %>%
             do(extract_coefs(lm(total ~ year, data=.)))
+
+        # Note that the units are fraction of pixel-level mean per decade - 
+        # hence the multiplication by 10 below
         slope_rast <- brick(chirps, values=FALSE, nl=1)
         slope_rast <- setValues(slope_rast,
-                                matrix(seasonal_lm_coefs$year, 
+                                matrix(seasonal_lm_coefs$year * 10, 
                                        nrow=nrow(chirps)*ncol(chirps), 
                                        ncol=1, byrow=TRUE))
         slope_rast <- writeRaster(slope_rast,
-                                  filename=paste0(this_basename, '_slope.tif'), 
+                                  filename=paste0(this_basename, '_decadalslope.tif'), 
                                   overwrite=TRUE)
 
         # p_val_rast <- brick(chirps, values=FALSE, nl=1)
@@ -203,9 +206,7 @@ foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
         #     },
         #     filename=paste0(out_basename, '_slope_masked.tif'),
         #     overwrite=TRUE)
-
     }
-
 }
 
 stopCluster(cl)
