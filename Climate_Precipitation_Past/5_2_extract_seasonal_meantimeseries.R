@@ -129,25 +129,7 @@ foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
     ggsave(paste0(out_basename, '_seasonal_timeseries_anomaly.png'), dpi=300,
            width=8, height=6)
 
-    longrains_season_rast <- brick(chirps, values=FALSE, nl=n_years)
-    longrains_season_rast <- setValues(longrains_season_rast,
-                                 matrix(filter(seasonal_ppt, season == 'Long rains')$total, 
-                                        nrow=nrow(chirps)*ncol(chirps), 
-                                        ncol=n_years))
-    writeRaster(longrains_season_rast,
-                filename=paste0(out_basename, '_longrains_total.tif'), 
-                overwrite=TRUE)
-
-    shortrains_season_rast <- brick(chirps, values=FALSE, nl=n_years)
-    shortrains_season_rast <- setValues(shortrains_season_rast,
-                                 matrix(filter(seasonal_ppt, season == 'Short rains')$total, 
-                                        nrow=nrow(chirps)*ncol(chirps), 
-                                        ncol=n_years))
-    writeRaster(shortrains_season_rast,
-                filename=paste0(out_basename, '_shortrains_total.tif'), 
-                overwrite=TRUE)
-
-    ## TODO: This doesn't extract significance due to bug in R - update to use 
+        ## TODO: This doesn't extract significance due to bug in R - update to use 
     ## broom when this bug is fixed
     # Map areas that are getting signif. wetter or drier, coded by mm per year
     extract_coefs <- function(model) {
@@ -157,7 +139,9 @@ foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
         d
     }
 
-    foreach (this_season=levels(seasonal_lm_coefs$season)) %do% {
+    foreach (this_season=unique(seasonal_ppt$season),
+             .packages=c('broom', 'dplyr', 'raster', 'rgdal',
+                         'ggplot2')) %dopar% {
         this_seasonal_ppt <- filter(seasonal_ppt, season == this_season) %>%
             select(-season)
         #TODO: Get this working from http://bit.ly/1Jl4aaI
@@ -165,7 +149,7 @@ foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
         #     do(fit=lm(total ~ year, data=.))
         # seasonal_fits <- tidy(seasonal_pixel_fits, fit)
 
-        this_basename <- paste0(out_basename, '_', paste(season, collapse=''))
+        this_basename <- paste0(out_basename, '_', paste(this_season, collapse=''))
         season_total_rast <- brick(chirps, values=FALSE, nl=n_years)
         season_total_rast <- setValues(season_total_rast,
                                        matrix(this_seasonal_ppt$total, 
@@ -174,11 +158,15 @@ foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
         writeRaster(season_total_rast,
                     filename=paste0(this_basename, '_total.tif'), 
                     overwrite=TRUE)
-
+        
+        # Add a fraction of mean total column
+        this_seasonal_ppt <- group_by(this_seasonal_ppt, pixel) %>%
+            mutate(total_frac=total/mean(total, na.rm=TRUE))
+        # Handle NAs induced by division of areas with zero mean ppt (oceans)
+        this_seasonal_ppt$total_frac[is.na(this_seasonal_ppt$total_frac)] <- 0
         # Model change in precipitation as fraction of pixel-level mean total
         seasonal_lm_coefs <- group_by(this_seasonal_ppt, pixel) %>%
-            mutate(total=total - mean(total)) %>%
-            do(extract_coefs(lm(total ~ year, data=.)))
+            do(extract_coefs(lm(total_frac ~ year, data=.)))
 
         # Note that the units are fraction of pixel-level mean per decade - 
         # hence the multiplication by 10 below
@@ -207,6 +195,7 @@ foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
         #     filename=paste0(out_basename, '_slope_masked.tif'),
         #     overwrite=TRUE)
     }
+    
 }
 
 stopCluster(cl)
