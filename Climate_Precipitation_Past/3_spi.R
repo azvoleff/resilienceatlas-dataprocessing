@@ -18,8 +18,8 @@ n_cpus <- 20
 cl  <- makeCluster(n_cpus)
 registerDoParallel(cl)
 
-in_folder <- file.path(prefix, "GRP", "CHIRPS")
-out_folder <- file.path(prefix, "GRP", "CHIRPS")
+in_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
+out_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
 shp_folder <- file.path(prefix, "GRP", "Boundaries")
 
 dataset <- 'monthly' # For SPI, use monthly

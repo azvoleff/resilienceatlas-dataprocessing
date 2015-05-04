@@ -15,8 +15,8 @@ registerDoParallel(cl)
 # For monthly data:
 dataset <- 'monthly' # For SPI, use monthly
 
-in_folder <- file.path(prefix, "GRP", "CHIRPS")
-out_folder <- file.path(prefix, "GRP", "CHIRPS")
+in_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
+out_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
 shp_folder <- file.path(prefix, "GRP", "Boundaries")
 stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))

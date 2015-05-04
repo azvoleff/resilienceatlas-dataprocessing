@@ -27,8 +27,8 @@ yrs <- seq(year(start_date), year(end_date))
 dates <- seq(start_date, end_date, by='months')
 periods_per_year <- 12
 
-in_folder <- file.path(prefix, "GRP", "CHIRPS")
-out_folder <- file.path(prefix, "GRP", "CHIRPS")
+in_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
+out_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
 stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
 shp_folder <- file.path(prefix, "GRP", "Boundaries")
