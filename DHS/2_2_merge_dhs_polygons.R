@@ -45,9 +45,24 @@ spplot(dhs_regions, 'Infntmrtlt')
 ##############
 # Education
 
-# Access to mass media
+#
+# Access to mass media at least once per week (Radio, TV and newspaper)
+spplot(dhs_regions, 'Wmnwthccss')
+
+# women with no access to mass media
+spplot(dhs_regions, 'Wmnwthnccs')
+
+# men with no access to mass media
 spplot(dhs_regions, 'Wmnwthccss')
 
 # Women who are literate
 spplot(dhs_regions, 'Wmnwhrltrt')
 
+# Women who cannot read at all
+spplot(dhs_regions, 'Wmnwhcnntr')
+
+##############
+# Infrastructure
+
+# Households with electricity
+spplot(dhs_regions, 'HHswthlctr')

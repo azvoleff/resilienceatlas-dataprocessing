@@ -113,7 +113,10 @@ sorg$Facet <- "Self-organization"
 unique(sorg$Indicator)
 
 learn_indic <- c(127383002, # women who are literate
+                 127384003, # percentage of women who cannot read at all
                  7135002, # pop 6-15 who are attending school
+                 13126000, # women with no access to mass media
+                 155126001, # men with no access to mass media
                  13126005) # percentage women with access to newspaper, television, and radio at least once per week
 learn <- get_indic(learn_indic, ccs)
 learn$Facet <- "Capacity for learning"
