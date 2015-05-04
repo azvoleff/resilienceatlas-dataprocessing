@@ -44,6 +44,7 @@ stopifnot(file_test('-d', out_folder))
 stopifnot(file_test('-d', shp_folder))
 
 aoi_polygons <- readOGR(shp_folder, 'Analysis_Areas')
+aoi_polygons <- aoi_polygons[aoi_polygons$Name == "Horn of Africa", ]
 
 foreach (dataset=datasets, .inorder=FALSE,
          .packages=c("rgdal", "lubridate", "dplyr", "raster")) %:%
@@ -100,34 +101,35 @@ foreach (dataset=datasets, .inorder=FALSE,
         }
 
         # Use cru_data raster as a template
-        annual_slope_rast <- brick(cru_data, values=FALSE, nl=1)
-        annual_slope_rast <- setValues(annual_slope_rast,
-                                   matrix(filter(annual_lm_coefs, coef == "year")$estimate, 
+        decadal_slope_rast <- brick(cru_data, values=FALSE, nl=1)
+        decadal_slope_rast <- setValues(decadal_slope_rast,
+                                   matrix(filter(annual_lm_coefs, coef == "year")$estimate * 10, 
                                           nrow=nrow(cru_data)*ncol(cru_data), 
                                           ncol=1, byrow=TRUE))
-        annual_slope_rast <- writeRaster(annual_slope_rast,
+        decadal_slope_rast <- writeRaster(decadal_slope_rast,
                     filename=file.path(out_folder, paste0(filename_base, 
-                                                          'annual_slope.tif')), 
+                                                          'decadal_slope.tif')), 
                     overwrite=TRUE)
 
-        annual_p_val_rast <- brick(cru_data, values=FALSE, nl=1)
-        annual_p_val_rast <- setValues(annual_p_val_rast,
+        decadal_p_val_rast <- brick(cru_data, values=FALSE, nl=1)
+        decadal_p_val_rast <- setValues(decadal_p_val_rast,
                                    matrix(filter(annual_lm_coefs, coef == "year")$p_val, 
                                           nrow=nrow(cru_data)*ncol(cru_data), 
                                           ncol=1, byrow=TRUE))
-        annual_p_val_rast <- writeRaster(annual_p_val_rast,
+        decadal_p_val_rast <- writeRaster(decadal_p_val_rast,
                     filename=file.path(out_folder, paste0(filename_base, 
-                                                          'annual_pval.tif')), 
+                                                          'decadal_pval.tif')), 
                     overwrite=TRUE)
 
-        annual_slope_rast <- overlay(annual_slope_rast, annual_p_val_rast,
+        decadal_slope_rast <- overlay(decadal_slope_rast, decadal_p_val_rast,
             fun=function(slp, p) {
                 slp[p > .05] <- NA
                 return(slp)
             },
             filename=file.path(out_folder, paste0(filename_base, 
-                                                  'annual_slope_masked.tif')),
+                                                  'decadal_slope_masked.tif')),
             overwrite=TRUE)
+
 }
 
 stopCluster(cl)
