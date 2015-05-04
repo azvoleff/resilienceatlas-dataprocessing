@@ -18,16 +18,9 @@ dem_extents$filename <- gsub('H:\\\\Data\\\\CGIAR_SRTM', dem_path, dem_extents$f
 dem_extents$filename <- gsub('\\\\', '/', dem_extents$filename)
 
 aoi_polygons <- readOGR(shp_folder, 'Analysis_Areas')
-
-
-
-
-
-
-
-
-ct_pts <- spTransform(ct_pts, CRS(proj4string(dem_extents)))
-intersecting <- as.logical(gIntersects(dem_extents, gConvexHull(ct_pts), byid=TRUE))
+aoi_polygons <- aoi_polygons[aoi_polygons$Name == "Horn of Africa", ]
+aoi_polygons <- spTransform(aoi_polygons, CRS(proj4string(dem_extents)))
+intersecting <- as.logical(gIntersects(dem_extents, gConvexHull(aoi_polygons), byid=TRUE))
 
 if (sum(intersecting) == 0) {
     stop('no intersecting dem extents found')
@@ -45,7 +38,7 @@ if (length(dem_list) > 1) {
     }
     mosaic_file <- extension(rasterTmpFile(), '.tif')
     # Calculate minimum bounding box coordinates:
-    mosaic_te <- as.numeric(bbox(ct_pts))
+    mosaic_te <- as.numeric(bbox(aoi_polygons))
     # Expand bbox slightly:
     mosaic_te[1] <- mosaic_te[1] - .05
     mosaic_te[2] <- mosaic_te[2] - .05

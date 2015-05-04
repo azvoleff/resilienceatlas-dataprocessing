@@ -53,14 +53,14 @@ write.csv(band_names, file=paste0(out_base, '_bandnames.csv'), row.names=FALSE)
 # the tiles, but with delayed computation - the actual mosaicing 
 # computations won't take place until the gdalwarp line below)
 vrt_file <- rasterTmpFile('.vrt')
-gdalbuildvrt(srcfiles, vrt_file)
+gdalbuildvrt(srcfiles, vrt_file, overwrite=TRUE)
 
 # Mosaic, reproject, and crop vrts
 dstfile <- paste0(out_base, '.tif')
 modis <- gdalwarp(vrt_file, dstfile, t_srs=t_srs, te=te,
                   tr=c(15/360, 15/360), r='cubicspline', multi=TRUE,
                   wo=paste0("NUM_THREADS=", n_cpus), overwrite=TRUE,
-                  verbose=TRUE, output_Raster=TRUE)
+                  output_Raster=TRUE, verbose=TRUE)
 
 # Delete the temp files
 unlink(vrt_files)
