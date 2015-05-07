@@ -57,7 +57,7 @@ foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
                                 format(start_date, "%Y%m"), '-', 
                                 format(end_date, "%Y%m")))
 
-    foreach (season=seasons,
+    foreach (this_season=seasons,
              .packages=c('broom', 'dplyr', 'raster', 'rgdal',
                          'ggplot2')) %dopar% {
         this_basename <- paste0(out_basename, '_', paste(this_season, collapse=''))
