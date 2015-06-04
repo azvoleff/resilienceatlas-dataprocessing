@@ -14,8 +14,8 @@ prefix <- prefixes[match(TRUE, unlist(lapply(prefixes, function(x) file_test('-d
 temps <- c('C:/Temp', # Local
            'H:/Temp', # Buffalo drive
            'O:/Temp', # Blue drive (HP or thinkpad)
-           'ENTER BERNADETTE TEMP PATH HERE', # Bernadette's machine
            '/localdisk/home/azvoleff/Temp', # vertica1
+           '/tmp', # Bernadette's Mac
            'D:/Temp') # CI-TEAM
 temp <- temps[match(TRUE, unlist(lapply(temps, function(x) file_test('-d', x))))]
 
