@@ -15,8 +15,6 @@ library(stringr)
 library(dplyr)
 library(ggplot2)
 
-base_dir <- "O:/Data/Vital Signs/LSMS_Data"
-
 lsms_folder <- file.path(prefix, "LSMS")
 
 # Below removes the value.labels returned by read.spss that mess up dplyr

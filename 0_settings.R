@@ -7,14 +7,14 @@ prefixes <- c('C:/Data', # HP current work
               'D:/azvoleff/Data', # CI-TEAM
               'H:/Data', # Buffalo drive
               'O:/Data', # Blue drive
+              'ENTER BERNADETTE FILE PATH HERE', # Bernadette's machine
               '/localdisk/home/azvoleff/Data') # vertica1
 prefix <- prefixes[match(TRUE, unlist(lapply(prefixes, function(x) file_test('-d', x))))]
-
-geogs <- read.csv(file.path(prefix, 'GRP', 'GRP_Countries.csv'))
 
 temps <- c('C:/Temp', # Local
            'H:/Temp', # Buffalo drive
            'O:/Temp', # Blue drive (HP or thinkpad)
+           'ENTER BERNADETTE TEMP PATH HERE', # Bernadette's machine
            '/localdisk/home/azvoleff/Temp', # vertica1
            'D:/Temp') # CI-TEAM
 temp <- temps[match(TRUE, unlist(lapply(temps, function(x) file_test('-d', x))))]
@@ -29,5 +29,5 @@ if (Sys.info()[4] == 'CI-TEAM') {
 } else if (Sys.info()[4] == 'vertica1.team.sdsc.edu') {
     n_cpus <- 16
 } else {
-    n_cpus <- 3
+    n_cpus <- 2
 }
