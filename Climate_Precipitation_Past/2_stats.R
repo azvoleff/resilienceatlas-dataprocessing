@@ -42,14 +42,19 @@ dates <- seq(chirps_start_date, chirps_end_date, by='months')
 periods_per_year <- 12
 
 ###### TEMPORARY
-# # Select the start and end dates for the data to include in this analysis
-# start_date <- as.Date('1985/1/1') # Inclusive
-# end_date <- as.Date('2014/12/1') # Exclusive
-start_date <- as.Date('1984/1/1')
-end_date <- as.Date('2013/12/1')
+# Select the start and end dates for the data to include in this analysis
+start_date <- as.Date('1985/1/1') # Inclusive
+end_date <- as.Date('2014/12/1') # Exclusive
 ###### TEMPORARY
 
-aoi_polygons <- readOGR(shp_folder, 'Analysis_Areas')
+aoi_polygons <- readOGR(shp_folder, 'GRP_Countries')
+grp_countries <- read.csv(file.path(prefix, "GRP", "DataTables", "GRP_Countries.csv"))
+grp_regions <- read.csv(file.path(prefix, "GRP", "DataTables", "GRP_Regions.csv"))
+grp_countries <- merge(grp_countries, grp_regions)
+
+aoi_polygons@data <- merge(aoi_polygons@data, grp_countries)
+
+aoi_polygons <- gUnaryUnion(aoi_polygons, id=aoi_polygons$Region_Name)
 
 foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
          .packages=c('raster', 'rgeos', 'dplyr', 'lubridate',
