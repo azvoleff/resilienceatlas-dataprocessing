@@ -12,12 +12,8 @@ library(gdalUtils)
 library(rgeos)
 library(teamlucc)
 library(foreach)
-library(doParallel)
 
-warp_threads <- 4
-
-cl  <- makeCluster(3)
-registerDoParallel(cl)
+warp_threads <- 2
 
 #dataset <- 'pentad'
 dataset <- 'monthly'
@@ -56,15 +52,15 @@ gdalbuildvrt(file.path(in_folder, tifs), vrt_file, separate=TRUE,
 # accompanying the data
 s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
 
-aoi_polygons <- readOGR(shp_folder, 'Analysis_Areas')
+aoi_polygons <- readOGR(shp_folder, 'GRP_Region_Hulls')
 
 foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
          .packages=c('raster', 'teamlucc', 'rgeos', 'gdalUtils',
-                     'rgdal')) %dopar% {
+                     'rgdal')) %do% {
     timestamp()
 
     aoi <- aoi_polygons[n, ]
-    name <- as.character(aoi$Name)
+    name <- as.character(aoi$Region_Nam)
     name <- gsub(' ', '', name)
     aoi <- gConvexHull(aoi)
     aoi <- spTransform(aoi, CRS(utm_zone(aoi, proj4string=TRUE)))
@@ -95,8 +91,4 @@ foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
     #         vals[vals == chirps_NA_value] <- NA
     #         return(vals)
     #     }, filename=chirps_tif_masked, overwrite=TRUE)
-
-    return(TRUE)
 }
-
-stopCluster(cl)
