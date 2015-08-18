@@ -5,149 +5,114 @@
 source('../0_settings.R')
 
 library(rgdal)
+library(stringr)
 library(raster)
-library(lubridate)
+library(tools)
 library(dplyr)
 library(foreach)
+library(abind)
+library(spatial.tools)
 library(doParallel)
+library(reshape2)
 
-# cl  <- makeCluster(3)
-# registerDoParallel(cl)
-
-
-###### TEMPORARY
-# # For monthly data:
-# dataset <- 'monthly' # For SPI, use monthly
-dataset <- 'v1p8chirps_monthly' # For SPI, use monthly
-###### TEMPORARY
+cl  <- makeCluster(12)
+registerDoParallel(cl)
 
 in_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
 out_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
-shp_folder <- file.path(prefix, "GRP", "Boundaries")
 stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
-stopifnot(file_test('-d', shp_folder))
 
-###### TEMPORARY
-# # Note the below code is INCLUSIVE of the start date
-# chirps_start_date <- as.Date('1981/1/1')
-# # Note the below code is INCLUSIVE of the end date
-# chirps_end_date <- as.Date('2014/12/1')
-chirps_start_date <- as.Date('1981/1/1')
-chirps_end_date <- as.Date('2014/4/1')
-###### TEMPORARY
+datafiles <- dir(in_folder, pattern='_CHIRPS_monthly_198101-201412.tif$')
+datafile <- datafiles[1]
 
-yrs <- seq(year(chirps_start_date), year(chirps_end_date))
-dates <- seq(chirps_start_date, chirps_end_date, by='months')
-periods_per_year <- 12
+anom_periods <- c(3, 6, 12)
 
-###### TEMPORARY
-# Select the start and end dates for the data to include in this analysis
-start_date <- as.Date('1985/1/1') # Inclusive
-end_date <- as.Date('2014/12/1') # Exclusive
-###### TEMPORARY
-
-aoi_polygons <- readOGR(shp_folder, 'GRP_Countries')
-grp_countries <- read.csv(file.path(prefix, "GRP", "DataTables", "GRP_Countries.csv"))
-grp_regions <- read.csv(file.path(prefix, "GRP", "DataTables", "GRP_Regions.csv"))
-grp_countries <- merge(grp_countries, grp_regions)
-
-aoi_polygons@data <- merge(aoi_polygons@data, grp_countries)
-
-aoi_polygons <- gUnaryUnion(aoi_polygons, id=aoi_polygons$Region_Name)
-
-foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
-         .packages=c('raster', 'rgeos', 'dplyr', 'lubridate',
-                     'rgdal')) %do% {
+foreach (datafile=datafiles) %do% {
     timestamp()
-    aoi <- aoi_polygons[n, ]
-    name <- as.character(aoi$Name)
-    name <- gsub(' ', '', name)
-
+    name <- str_extract(datafile, '^[a-zA-Z]*')
     print(paste0("Processing ", name, "..."))
+    out_basename <- file.path(in_folder, file_path_sans_ext(datafile))
+    chirps <- brick(file.path(in_folder, datafile))
 
-    in_basename <- file.path(in_folder, paste0(name, '_CHIRPS'))
+    # TEMPORARY ##############################################################
+    chirps <- stack(chirps, layers=seq(1:72))
+    # TEMPORARY ##############################################################
 
-    out_basename <- file.path(out_folder, paste0(name, '_CHIRPS_',
-                                format(start_date, "%Y%m"), '-', 
-                                format(end_date, "%Y%m")))
-                                  
-    chirps_tif <- paste0(in_basename, "_", dataset, '_', 
-                         format(chirps_start_date, "%Y%m"), '-', 
-                         format(chirps_end_date, "%Y%m"), '.tif')
+    calc_monthly_mean <- function(p, ...) {
+        p[p == -9999] <- NA
+        mthly_mean <- foreach(n=1:12, .combine=c, .final=raster::stack) %do%{
+            # Pull out all arrays for this month and calculate mean
+            raster::mean(p[[seq(from=n, by=12, length.out=round(dim(p)[3]/12))]])
+        }
+        # Note that tranpose=TRUE is needed as rasterEngine uses cols, rows, 
+        # bands ordering
+        as.array(mthly_mean, transpose=TRUE)
+    }
+    mthly_mean <- rasterEngine(p=chirps, fun=calc_monthly_mean,
+        datatype='FLT4S', outbands=12, outfiles=1, processing_unit="chunk", 
+        chunk_format="raster", filename=paste0(out_basename, '_mean_monthly'),
+        .packages='raster')
 
-    # Calculate the band numbers that are needed
-    included_dates <- dates[(dates >= start_date) & (dates <= end_date)]
-    band_nums <- c(1:length(dates))[(dates >= start_date) & (dates <= end_date)]
+    calc_runtotal_n_mth <- function(p, n_mth, ...) {
+        p[p == -9999] <- NA
+        out <- apply(p, c(1, 2), FUN=function(x) {stats::filter(x, rep(1, n_mth), sides=1)})
+        out <- aperm(out, c(2, 3, 1))
+        # rasterEngine does not properly handle NAs, so recode these to -32767
+        out[is.na(out)] <- -32767
+        out
+    }
 
-    chirps <- stack(chirps_tif, bands=band_nums)
+    calc_anom_n_mth <- function(p, n_mth, ...) {
+        p[p == -9999] <- NA
+        # Calculate running total precip for periods of length n_mth
+        runtot <- apply(p, c(1, 2), FUN=function(x) {
+            stats::filter(x, rep(1, n_mth), sides=1)
+            })
+        runtot <- aperm(runtot, c(2, 3, 1))
+        # Calculate the mean precip for each pixel for each of these periods 
+        period_mean <- foreach(n=1:12, .combine=abind, .export='runtot') %do% {
+            out <- apply(runtot[ , , seq(from=n, by=12, length.out=round(dim(p)[3]/12))], c(1, 2), mean)
+            out <- array(out, dim=c(dim(runtot)[1], dim(runtot)[2], 1))
+        }
+        # Subtract the mean for each period from the running total to get 
+        # anomalies calculated over a period equal to n_mth. Note that each 
+        # month in the year has a different mean value subtracted as the mean 
+        # precipitation is calculated for each period to allow for seasonal 
+        # variation in total precip.
+        anom <- sweep(runtot, c(1, 2), period_mean, check.margin=FALSE)
+        # rasterEngine does not properly handle NAs, so recode these to -32767
+        anom[is.na(anom)] <- -32767
+        anom
+    }
 
-    calc_tot <- function(
-    out <- rasterEngine(t1p=t1p, t2p=t2p, fun=calc_chg_dir_st, 
-                        args=list(n_classes=n_classes), outbands=1, 
-                        datatype='INT2S', ...)
+    # Calculate running totals and anomalies for 3, 6, and 12 month periods
+    for (anom_period in anom_periods) {
+        runtotal <- rasterEngine(p=chirps, args=list(n_mth=anom_period),
+            fun=calc_runtotal_n_mth, outbands=nlayers(chirps), datatype='INT2S', 
+            processing_unit="chunk", outfiles=1,
+            filename=paste0(out_basename, '_runtotal_', anom_period, 'mth'))
 
-    # Setup a dataframe with the precipitation data so anomalies, etc can be 
-    # calculated
-    years <- year(included_dates)
-    years_rep <- rep(years, each=nrow(chirps)*ncol(chirps))
-    subyears <- rep(seq(1, periods_per_year),  length.out=nlayers(chirps))
-    subyears_rep <- rep(subyears, each=nrow(chirps)*ncol(chirps))
-    pixels_rep <- rep(seq(1:(nrow(chirps)*ncol(chirps))), nlayers(chirps))
-    chirps_df <- data.frame(year=years_rep,
-                            subyear=subyears_rep, 
-                            pixel=pixels_rep,
-                            ppt=as.vector(chirps))
-    chirps_df <- tbl_df(chirps_df)
+        anom <- rasterEngine(p=chirps, args=list(n_mth=anom_period),
+            fun=calc_anom_n_mth, outbands=nlayers(chirps), datatype='INT2S', 
+            processing_unit="chunk", outfiles=1, .packages=c('abind'),
+            filename=paste0(out_basename, '_anom_', anom_period, 'mth'))
 
-    # Add 12 month total precip column. Use sides=1 in filter to have it be 12 
-    # month total as of that date
-    chirps_df <- group_by(chirps_df, pixel) %>%
-        arrange(year, subyear) %>%
-        mutate(tot_12mth=as.numeric(stats::filter(ppt, rep(1/12, 12), sides=1)*12))
-
-    # Calculate the mean_monthly for each subyear for each pixel
-    ppt_mean_monthly <- group_by(chirps_df, pixel, subyear) %>%
-        summarize(mean_monthly=mean(ppt, na.rm=TRUE))
-    # Use chirps raster as a template
-    ppt_mean_monthly_rast <- brick(chirps, values=FALSE, nl=periods_per_year)
-    ppt_mean_monthly_rast <- setValues(ppt_mean_monthly_rast,
-                               matrix(ppt_mean_monthly$mean_monthly, 
-                                      nrow=nrow(chirps)*ncol(chirps), 
-                                      ncol=periods_per_year, byrow=TRUE))
-    writeRaster(ppt_mean_monthly_rast,
-                filename=paste0(out_basename, '_ppt_mean_monthly.tif'), 
-                overwrite=TRUE)
-
-    # Calculate the mean annual precipitation for each pixel
-    ppt_mean_12mth <- group_by(chirps_df, pixel, year) %>%
-        summarize(total_annual=sum(ppt, na.rm=TRUE)) %>%
-        group_by(pixel) %>%
-        summarize(mean_annual=mean(total_annual, na.rm=TRUE))
-    # Use chirps raster as a template
-    ppt_mean_12mth_rast <- brick(chirps, values=FALSE, nl=1)
-    ppt_mean_12mth_rast <- setValues(ppt_mean_12mth_rast,
-                               matrix(ppt_mean_12mth$mean_annual, 
-                                      nrow=nrow(chirps)*ncol(chirps), 
-                                      ncol=1))
-    writeRaster(ppt_mean_12mth_rast,
-                filename=paste0(out_basename, '_ppt_mean_12mth.tif'), 
-                overwrite=TRUE)
-
-    chirps_df$anom_12mth <- chirps_df$tot_12mth - ppt_mean_12mth$mean_annual[match(chirps_df$pixel, ppt_mean_12mth$pixel)]
-    #filter(chirps_df, pixel == 1)[1:36,]
-
-    save(chirps_df, file=paste0(out_basename, '_ppt.RData'))
-
-    # Save rasters of 12 month anomalies
-    anom_12mth_rast <- brick(chirps, values=FALSE, nl=nlayers(chirps))
-    anom_12mth_rast <- setValues(anom_12mth_rast,
-                                 matrix(chirps_df$anom_12mth, 
-                                        nrow=nrow(chirps)*ncol(chirps), 
-                                        ncol=nlayers(chirps)))
-    anom_12mth_rast_filename <- paste0(out_basename, '_ppt_anom_12mth.tif')
-    writeRaster(anom_12mth_rast, filename=anom_12mth_rast_filename, 
-                overwrite=TRUE)
-
-    return(TRUE)
+    }
+    # plot(mthly_mean)
+    # plot(mthly_mean, zlim=c(0,450))
+    #
+    # plot(anom[[45]], zlim=c(-600,600))
+    # plot(anom[[46]], zlim=c(-600,600))
+    # plot(anom[[47]], zlim=c(-600,600))
+    # plot(anom[[63]], zlim=c(-600,600))
+    # plot(anom[[64]], zlim=c(-600,600))
+    # plot(anom[[65]], zlim=c(-600,600))
+    #
+    # plot(runtotal[[45]])
+    # plot(runtotal[[46]])
+    # plot(runtotal[[47]])
+    # plot(runtotal[[63]])
+    # plot(runtotal[[64]])
+    # plot(runtotal[[65]])
 }
