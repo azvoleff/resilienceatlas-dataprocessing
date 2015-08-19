@@ -143,7 +143,7 @@ foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
              .packages=c('broom', 'dplyr', 'raster', 'rgdal',
                          'ggplot2')) %dopar% {
         this_seasonal_ppt <- filter(seasonal_ppt, season == this_season) %>%
-            select(-season)
+            dplyr::select(-season)
         #TODO: Get this working from http://bit.ly/1Jl4aaI
         # seasonal_pixel_fits <- group_by(this_seasonal_ppt, pixel) %>%
         #     do(fit=lm(total ~ year, data=.))
