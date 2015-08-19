@@ -24,7 +24,6 @@ stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
 
 datafiles <- dir(in_folder, pattern='_CHIRPS_monthly_198101-201412.tif$')
-datafile <- datafiles[1]
 
 anom_periods <- c(3, 6, 12)
 
