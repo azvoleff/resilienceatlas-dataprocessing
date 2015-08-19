@@ -35,10 +35,6 @@ foreach (datafile=datafiles) %do% {
     out_basename <- file.path(in_folder, file_path_sans_ext(datafile))
     chirps <- brick(file.path(in_folder, datafile))
 
-    # TEMPORARY ##############################################################
-    chirps <- stack(chirps, layers=seq(1:72))
-    # TEMPORARY ##############################################################
-
     calc_monthly_mean <- function(p, ...) {
         p[p == -9999] <- NA
         mthly_mean <- foreach(n=1:12, .combine=c, .final=raster::stack) %do%{
@@ -116,3 +112,4 @@ foreach (datafile=datafiles) %do% {
     # plot(runtotal[[64]])
     # plot(runtotal[[65]])
 }
+timestamp()
