@@ -13,31 +13,17 @@ library(lubridate)
 
 spi_periods <- c(12)
 
-n_cpus <- 20
-
-cl  <- makeCluster(n_cpus)
+cl  <- makeCluster(12)
 registerDoParallel(cl)
-
-in_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
-out_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
-shp_folder <- file.path(prefix, "GRP", "Boundaries")
-
-dataset <- 'monthly' # For SPI, use monthly
-
-# Note the below code is INCLUSIVE of the start date
-chirps_start_date <- as.Date('1981/1/1')
-# Note the below code is INCLUSIVE of the end date
-chirps_end_date <- as.Date('2014/12/1')
-yrs <- seq(year(chirps_start_date), year(chirps_end_date))
-dates <- seq(chirps_start_date, chirps_end_date, by='months')
 
 # Select the start and end dates for the data to include in this analysis
 start_date <- as.Date('1985/1/1') # Inclusive
 end_date <- as.Date('2014/12/1') # Exclusive
 
-stopifnot(dataset == "monthly")
-
-aoi_polygons <- readOGR(shp_folder, 'Analysis_Areas')
+in_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
+out_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
+stopifnot(file_test('-d', in_folder))
+stopifnot(file_test('-d', out_folder))
 
 # Define function to calculate SPI
 calc_spi <- function(chirps_mat, spi_period) {
@@ -57,25 +43,27 @@ calc_spi <- function(chirps_mat, spi_period) {
     return(spi_mat)
 }
 
-for (n in 1:nrow(aoi_polygons)) {
+datafiles <- dir(in_folder, pattern='_CHIRPS_monthly_198101-201412.tif$')
+foreach (datafile=datafiles) %do% {
     timestamp()
-    aoi <- aoi_polygons[n, ]
-    name <- as.character(aoi$Name)
-    name <- gsub(' ', '', name)
-
+    name <- str_extract(datafile, '^[a-zA-Z]*')
     print(paste0("Processing ", name, "..."))
+    out_basename <- file.path(in_folder, file_path_sans_ext(datafile))
 
-    in_basename <- file.path(out_folder,
-                           paste0(name, '_CHIRPS_', dataset,
-                                  '_', format(chirps_start_date, "%Y%m"), '-', 
-                                  format(chirps_end_date, "%Y%m")))
+    # Calculate the band numbers that are needed
+    dates <- seq(as.Date('1981/1/1'), as.Date('2014/12/1'), by='months')
+    dates <- dates[(dates >= start_date) & (dates <= end_date)]
+    band_nums <- c(1:length(dates))[(dates >= start_date) & (dates <= end_date)]
 
-    chirps_tif <- paste0(in_basename, '.tif')
+    ### TEMPORARY
+    band_nums <- 49:84
+    ### TEMPORARY
 
-    out_basename <- file.path(out_folder,
-                              paste0(name, '_CHIRPS_',
-                                     format(start_date, "%Y%m"), '-',
-                                     format(end_date, "%Y%m")))
+    chirps <- stack(file.path(in_folder, datafile), bands=band_nums)
+
+    out_basename <- file.path(in_folder,
+        paste0(gsub('[0-9-]*', '', file_path_sans_ext(datafile)),
+              start_date_text, '-', end_date_text))
 
     # Calculate the band numbers that are needed
     included_dates <- dates[(dates >= start_date) & (dates <= end_date)]
