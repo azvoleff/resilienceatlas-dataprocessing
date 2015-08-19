@@ -80,7 +80,8 @@ foreach (datafile=datafiles) %do% {
         lm_coefs <- group_by(p_df, year, pixel) %>%
             summarize(ppt_annual=sum(ppt, na.rm=TRUE)) %>%
             group_by(pixel) %>%
-            do(extract_coefs(lm(ppt_annual ~ year, data=.)))
+            mutate(ppt_annual_pctmean=(ppt_annual/sum(ppt_annual))*100) %>%
+            do(extract_coefs(lm(ppt_annual_pctmean ~ year, data=.)))
         out <- array(c(filter(lm_coefs, coef == "year")$estimate,
                        filter(lm_coefs, coef == "year")$p_val),
                      dim=c(dim(p)[1], dim(p)[2], 2))
