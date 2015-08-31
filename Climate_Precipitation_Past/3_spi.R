@@ -5,19 +5,21 @@
 source('../0_settings.R')
 
 library(rgdal)
+library(stringr)
 library(raster)
 library(SPEI)
 library(foreach)
 library(doParallel)
 library(lubridate)
+library(tools)
 
-spi_periods <- c(12)
+spi_periods <- c(12, 24)
 
 cl  <- makeCluster(12)
 registerDoParallel(cl)
 
 # Select the start and end dates for the data to include in this analysis
-start_date <- as.Date('1985/1/1') # Inclusive
+start_date <- as.Date('1981/1/1') # Inclusive
 end_date <- as.Date('2014/12/1') # Exclusive
 
 in_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
@@ -55,12 +57,10 @@ foreach (datafile=datafiles) %do% {
     dates <- dates[(dates >= start_date) & (dates <= end_date)]
     band_nums <- c(1:length(dates))[(dates >= start_date) & (dates <= end_date)]
 
-    ### TEMPORARY
-    band_nums <- 49:84
-    ### TEMPORARY
-
     chirps <- stack(file.path(in_folder, datafile), bands=band_nums)
 
+    start_date_text <- format(start_date, '%Y%m%d')
+    end_date_text <- format(end_date, '%Y%m%d')
     out_basename <- file.path(in_folder,
         paste0(gsub('[0-9-]*', '', file_path_sans_ext(datafile)),
               start_date_text, '-', end_date_text))
@@ -68,6 +68,10 @@ foreach (datafile=datafiles) %do% {
     # Calculate the band numbers that are needed
     included_dates <- dates[(dates >= start_date) & (dates <= end_date)]
     band_nums <- c(1:length(dates))[(dates >= start_date) & (dates <= end_date)]
+
+    ### TEMPORARY
+    band_nums <- 49:84
+    ### TEMPORARY
 
     chirps <- stack(chirps_tif, bands=band_nums)
 
