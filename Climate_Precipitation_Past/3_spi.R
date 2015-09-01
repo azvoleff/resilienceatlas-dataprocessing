@@ -12,10 +12,11 @@ library(foreach)
 library(doParallel)
 library(lubridate)
 library(tools)
+library(spatial.tools)
 
 spi_periods <- c(12, 24)
 
-cl  <- makeCluster(12)
+cl  <- makeCluster(20)
 registerDoParallel(cl)
 
 # Select the start and end dates for the data to include in this analysis
@@ -28,24 +29,24 @@ stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
 
 # Define function to calculate SPI
-calc_spi <- function(chirps_mat, spi_period) {
-    # Split the chirps_mat into pieces to minimize the number of calls to the
-    # spi function
-    start_n <- floor(seq(1, ncol(chirps_mat),
-                         length.out=min(ncol(chirps_mat), n_cpus + 1)))
-    end_n <- start_n[2:length(start_n)]
-    start_n <- start_n[1:(length(start_n) - 1)]
-    end_n <- end_n - 1
-    end_n[length(end_n)] <- end_n[length(end_n)] + 1
-    spi_mat <- foreach(start_n=start_n, end_n=end_n,
-                       .combine=cbind, .packages=c("SPEI")) %dopar% {
-        # Multiply by 1000 and round so results can be stored as INT2S
-        round(spi(chirps_mat[, start_n:end_n], spi_period, na.rm=TRUE)$fitted * 1000)
-    }
-    return(spi_mat)
+calc_spi <- function(p, spi_period, ...) {
+    browser()
+    p[p == -9999] <- NA
+    dim_p <- dim(p)
+    # SPI expects each timeseries in its own column. So first store the pixels 
+    # in rows:
+    p <- t(array(p, dim=c(dim_p[1] * dim_p[2], dim_p[3])))
+    # Multiply by 1000 and round so results can be stored as INT2S
+    out <- round(spi(p, spi_period, na.rm=TRUE)$fitted * 1000)
+    # Convert back to having timeseries in the z-direction
+    out <- array(t(out), dim=dim_p)
+    # rasterEngine does not properly handle NAs, so recode these to -32767
+    out[is.na(out)] <- -32767
+    out
 }
 
 datafiles <- dir(in_folder, pattern='_CHIRPS_monthly_198101-201412.tif$')
+
 foreach (datafile=datafiles) %do% {
     timestamp()
     name <- str_extract(datafile, '^[a-zA-Z]*')
@@ -54,10 +55,7 @@ foreach (datafile=datafiles) %do% {
 
     # Calculate the band numbers that are needed
     dates <- seq(as.Date('1981/1/1'), as.Date('2014/12/1'), by='months')
-    dates <- dates[(dates >= start_date) & (dates <= end_date)]
     band_nums <- c(1:length(dates))[(dates >= start_date) & (dates <= end_date)]
-
-    chirps <- stack(file.path(in_folder, datafile), bands=band_nums)
 
     start_date_text <- format(start_date, '%Y%m%d')
     end_date_text <- format(end_date, '%Y%m%d')
@@ -65,25 +63,13 @@ foreach (datafile=datafiles) %do% {
         paste0(gsub('[0-9-]*', '', file_path_sans_ext(datafile)),
               start_date_text, '-', end_date_text))
 
-    # Calculate the band numbers that are needed
-    included_dates <- dates[(dates >= start_date) & (dates <= end_date)]
-    band_nums <- c(1:length(dates))[(dates >= start_date) & (dates <= end_date)]
-
-    ### TEMPORARY
-    band_nums <- 49:84
-    ### TEMPORARY
-
-    chirps <- stack(chirps_tif, bands=band_nums)
-
-    chirps_mat <- t(as.matrix(chirps))
+    chirps <- stack(file.path(in_folder, datafile), bands=band_nums)
 
     for (spi_period in spi_periods) {
-        spi_mat <- calc_spi(chirps_mat, spi_period)
-        out_rast <- brick(chirps, values=FALSE, nl=nlayers(chirps))
-        out_rast <- setValues(out_rast, t(spi_mat))
-        spi_filename <- paste0(out_basename, '_SPI_', spi_period, '.tif')
-        out_rast <- writeRaster(out_rast, spi_filename, overwrite=TRUE,
-                                datatype="INT2S")
+        spi_out <- rasterEngine(p=chirps, args=list(spi_period=spi_period),
+            fun=calc_spi, outbands=nlayers(chirps), datatype='INT2S', 
+            processing_unit="chunk", outfiles=1, .packages=c('abind', 'SPEI'),
+            filename=paste0(out_basename, '_SPI_', spi_period, 'mth'))
     }
 }
 
