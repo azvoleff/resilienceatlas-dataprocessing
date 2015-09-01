@@ -14,9 +14,9 @@ library(lubridate)
 library(tools)
 library(spatial.tools)
 
-spi_periods <- c(12, 24)
+spi_periods <- c(12)
 
-cl  <- makeCluster(20)
+cl <- makeCluster(20)
 registerDoParallel(cl)
 
 # Select the start and end dates for the data to include in this analysis
@@ -68,7 +68,7 @@ foreach (datafile=datafiles) %do% {
     for (spi_period in spi_periods) {
         spi_out <- rasterEngine(p=chirps, args=list(spi_period=spi_period),
             fun=calc_spi, outbands=nlayers(chirps), datatype='INT2S', 
-            processing_unit="chunk", outfiles=1, .packages=c('abind', 'SPEI'),
+            processing_unit="chunk", outfiles=1, .packages=c('SPEI'),
             filename=paste0(out_basename, '_SPI_', spi_period, 'mth'))
     }
 }
