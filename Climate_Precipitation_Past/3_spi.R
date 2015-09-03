@@ -23,8 +23,10 @@ registerDoParallel(cl)
 start_date <- as.Date('1981/1/1') # Inclusive
 end_date <- as.Date('2014/12/1') # Exclusive
 
-in_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
-out_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
+# in_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
+# out_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
+in_folder <- file.path(prefix, "Vital_Signs", "CHIRPS-2.0")
+out_folder <- file.path(prefix, "Vital_Signs", "CHIRPS-2.0")
 stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
 
