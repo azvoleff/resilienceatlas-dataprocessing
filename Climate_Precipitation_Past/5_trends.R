@@ -19,7 +19,7 @@ library(spatial.tools)
 start_date <- as.Date('1985/1/1') # Inclusive
 end_date <- as.Date('2014/12/1') # Exclusive
 
-cl  <- makeCluster(3)
+cl  <- makeCluster(12)
 registerDoParallel(cl)
 
 # in_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
@@ -30,7 +30,6 @@ stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
 
 datafiles <- dir(in_folder, pattern='_CHIRPS_monthly_198101-201412.tif$')
-datafile <- datafiles[1]
 
 foreach (datafile=datafiles) %do% {
     timestamp()
@@ -48,18 +47,10 @@ foreach (datafile=datafiles) %do% {
     dates <- dates[(dates >= start_date) & (dates <= end_date)]
     band_nums <- c(1:length(dates))[(dates >= start_date) & (dates <= end_date)]
 
-    ### TEMPORARY
-    band_nums <- 49:84
-    ### TEMPORARY
-
     chirps <- stack(file.path(in_folder, datafile), bands=band_nums)
 
-    ### TODO: Need to be producing outputs in units of percent change relative 
-    ### to baseline total annual precipitation
-
-    # Function to calculate trend
+    # Function to calculate trend)
     calc_trend <- function(p, dates, ...) {
-        p[p == -9999] <- NA
         # Setup period identifiers so the data can be used in a dataframe
         years <- year(dates)
         years_rep <- rep(years, each=dim(p)[1]*dim(p)[2])
@@ -72,9 +63,14 @@ foreach (datafile=datafiles) %do% {
                            ppt=as.vector(p))
         # Map areas that are getting signif. wetter or drier, coded by mm per 
         # year
-        extract_coefs <- function(model) {
-            d <- data.frame(summary(model)$coefficients[, c(1, 4)])
-            d <- cbind(row.names(d), d)
+        extract_coefs <- function(indata) {
+            if (sum(!is.na(indata$ppt_annual_pctmean)) < 3) {
+                d <- data.frame(coef=c('(Intercept)', 'year'), c(NA, NA), c(NA, NA))
+            } else {
+                model <- lm(ppt_annual_pctmean ~ year, data=indata)
+                d <- data.frame(summary(model)$coefficients[, c(1, 4)])
+                d <- cbind(row.names(d), d)
+            }
             names(d) <- c('coef', 'estimate', 'p_val')
             row.names(d) <- NULL
             return(d)
@@ -83,7 +79,7 @@ foreach (datafile=datafiles) %do% {
             summarize(ppt_annual=sum(ppt, na.rm=TRUE)) %>%
             group_by(pixel) %>%
             mutate(ppt_annual_pctmean=(ppt_annual/sum(ppt_annual))*100) %>%
-            do(extract_coefs(lm(ppt_annual_pctmean ~ year, data=.)))
+            do(extract_coefs(.))
         out <- array(c(filter(lm_coefs, coef == "year")$estimate,
                        filter(lm_coefs, coef == "year")$p_val),
                      dim=c(dim(p)[1], dim(p)[2], 2))
