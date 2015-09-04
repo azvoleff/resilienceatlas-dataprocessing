@@ -19,8 +19,10 @@ warp_threads <- 2
 dataset <- 'monthly'
 
 in_folder <- file.path(prefix, "CHIRPS-2.0", paste0('global-', dataset))
-out_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
-shp_folder <- file.path(prefix, "GRP", "Boundaries")
+# out_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
+# shp_folder <- file.path(prefix, "GRP", "Boundaries")
+out_folder <- file.path(prefix, "Vital_Signs", "CHIRPS-2.0")
+shp_folder <- file.path(prefix, "Vital_Signs", "Boundaries")
 stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
 stopifnot(file_test("-d", shp_folder))
@@ -52,7 +54,7 @@ gdalbuildvrt(file.path(in_folder, tifs), vrt_file, separate=TRUE,
 # accompanying the data
 s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
 
-aoi_polygons <- readOGR(shp_folder, 'GRP_Region_Hulls')
+aoi_polygons <- readOGR(shp_folder, 'Region_Hulls')
 
 foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
          .packages=c('raster', 'teamlucc', 'rgeos', 'gdalUtils',
