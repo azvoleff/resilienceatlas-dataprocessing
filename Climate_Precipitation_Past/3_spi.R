@@ -53,7 +53,6 @@ foreach (datafile=datafiles) %do% {
     timestamp()
     name <- str_extract(datafile, '^[a-zA-Z]*')
     print(paste0("Processing ", name, "..."))
-    out_basename <- file.path(in_folder, file_path_sans_ext(datafile))
 
     # Calculate the band numbers that are needed
     dates <- seq(as.Date('1981/1/1'), as.Date('2014/12/1'), by='months')
