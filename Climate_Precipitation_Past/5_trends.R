@@ -18,6 +18,7 @@ library(spatial.tools)
 # Select the start and end dates for the data to include in this analysis
 start_date <- as.Date('1985/1/1') # Inclusive
 end_date <- as.Date('2014/12/1') # Exclusive
+included_subyears <- NA
 
 cl  <- makeCluster(3)
 registerDoParallel(cl)
@@ -40,6 +41,13 @@ foreach (datafile=datafiles) %do% {
     dates <- seq(as.Date('1981/1/1'), as.Date('2014/12/1'), by='months')
     band_nums <- c(1:length(dates))[(dates >= start_date) & (dates <= end_date)]
     dates <- dates[band_nums]
+
+    # Calculate season string
+    if (!is.na(included_subyears)) {
+        season_string <- paste0('_', paste(included_subyears, collapse='-'))
+    } else {
+        season_string <- ''
+    }
 
     start_date_text <- format(start_date, '%Y%m%d')
     end_date_text <- format(end_date, '%Y%m%d')
@@ -93,10 +101,11 @@ foreach (datafile=datafiles) %do% {
         out[ , , 2][is.na(p[ , , 1])] <- NA
         out
     }
+
     decadal_trend <- rasterEngine(p=chirps, args=list(dates=dates),
         fun=calc_decadal_trend, datatype='FLT4S', outbands=2, outfiles=1, 
         processing_unit="chunk",
-        filename=paste0(out_basename, '_trend_decadal'),
+        filename=paste0(out_basename, '_trend_decadal', season_string),
         .packages=c('dplyr', 'lubridate'))
 
 }
