@@ -19,7 +19,7 @@ library(spatial.tools)
 start_date <- as.Date('1985/1/1') # Inclusive
 end_date <- as.Date('2014/12/1') # Exclusive
 
-cl  <- makeCluster(2)
+cl  <- makeCluster(3)
 registerDoParallel(cl)
 
 # in_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
@@ -30,7 +30,6 @@ stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
 
 datafiles <- dir(in_folder, pattern='_CHIRPS_monthly_198101-201412.tif$')
-datafile <- datafiles[1]
 
 foreach (datafile=datafiles) %do% {
     timestamp()
@@ -51,7 +50,8 @@ foreach (datafile=datafiles) %do% {
     chirps <- stack(file.path(in_folder, datafile), bands=band_nums)
 
     # Function to calculate trend)
-    calc_trend <- function(p, dates, ...) {
+    calc_decadal_trend <- function(p, dates, included_subyears=NA, ...) {
+        p[p == -9999] <- NA
         # Setup period identifiers so the data can be used in a dataframe
         years <- year(dates)
         years_rep <- rep(years, each=dim(p)[1]*dim(p)[2])
@@ -62,6 +62,9 @@ foreach (datafile=datafiles) %do% {
                            subyear=subyears_rep, 
                            pixel=pixels_rep,
                            ppt=as.vector(p))
+        if (!is.na(included_subyears)) {
+            p_df <- dplyr::filter(p_df, subyear %in% included_subyears)
+        }
         # Map areas that are getting signif. wetter or drier, coded by mm per 
         # year
         extract_coefs <- function(indata) {
@@ -81,18 +84,19 @@ foreach (datafile=datafiles) %do% {
             group_by(pixel) %>%
             mutate(ppt_annual_pctmean=(ppt_annual/sum(ppt_annual))*100) %>%
             do(extract_coefs(.))
-        out <- array(c(filter(lm_coefs, coef == "year")$estimate,
+        # Note the *10 below to convert to decadal change
+        out <- array(c(filter(lm_coefs, coef == "year")$estimate * 10,
                        filter(lm_coefs, coef == "year")$p_val),
                      dim=c(dim(p)[1], dim(p)[2], 2))
         # Mask out nodata areas
-        out[, , 1][is.na(p[ , , 1])] <- NA
-        out[, , 2][is.na(p[ , , 1])] <- NA
+        out[ , , 1][is.na(p[ , , 1])] <- NA
+        out[ , , 2][is.na(p[ , , 1])] <- NA
         out
     }
-    annual_trend <- rasterEngine(p=chirps, args=list(dates=dates),
-        fun=calc_trend, datatype='FLT4S', outbands=2, outfiles=1, 
+    decadal_trend <- rasterEngine(p=chirps, args=list(dates=dates),
+        fun=calc_decadal_trend, datatype='FLT4S', outbands=2, outfiles=1, 
         processing_unit="chunk",
-        filename=paste0(out_basename, '_trend_annual'),
+        filename=paste0(out_basename, '_trend_decadal'),
         .packages=c('dplyr', 'lubridate'))
 
 }
