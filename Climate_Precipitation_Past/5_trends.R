@@ -22,8 +22,10 @@ end_date <- as.Date('2014/12/1') # Exclusive
 cl  <- makeCluster(3)
 registerDoParallel(cl)
 
-in_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
-out_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
+# in_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
+# out_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
+in_folder <- file.path(prefix, "Vital_Signs", "CHIRPS-2.0")
+out_folder <- file.path(prefix, "Vital_Signs", "CHIRPS-2.0")
 stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
 
