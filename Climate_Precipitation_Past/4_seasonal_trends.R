@@ -84,49 +84,8 @@ foreach (datafile=datafiles) %do% {
     ### TESTING
 
     wet_seasons <- function(wm, mm, ...) {
-        sourceCpp('calc_missings.cpp')
+        sourceCpp('4_calc_seasons.cpp')
         # Function to code seasonal data
-        ident_seasons <- function(wm, mm) {
-            # Extend series so seasons can wrap around beg/end of year
-            wm_wrap <- c(wm, wm, wm)
-            mm_wrap <- c(mm, mm, mm)
-            # In forward direction, only need to process max indices in the first 
-            # two thirds of the wrapped series
-            fwd_indices <- which(wm_wrap == 1)
-            fwd_indices <- fwd_indices[fwd_indices <= (2*length(wm))]
-            # In backwards direction, only need to process max indices in the two 
-            # second two thirds of the wrapped series
-            bwd_indices <- which(wm_wrap == 1)
-            bwd_indices <- bwd_indices[bwd_indices > length(wm)]
-            foreach (max_i=fwd_indices) %do% {
-                lag_n <- 1
-                while (lag_n <= 6) {
-                    # if ((mm_wrap[max_i + lag_n] >= .3*mm_wrap[max_i]) |
-                    #     (mm_wrap[max_i + lag_n] >= 2*mm_wrap[max_i + lag_n + 1])) {
-                    if (mm_wrap[max_i + lag_n] >= .3*mm_wrap[max_i]) {
-                        wm_wrap[max_i + lag_n] <- 1
-                        lag_n <- lag_n + 1
-                    } else {
-                        break
-                    }
-                }
-            }
-            foreach (max_i=bwd_indices) %do% {
-                lag_n <- 1
-                while (lag_n <= 6) {
-                    # if ((mm_wrap[max_i - lag_n] >= .3*mm_wrap[max_i]) |
-                    #     (mm_wrap[max_i - lag_n] >= 2*mm_wrap[max_i - lag_n - 1])) {
-                    if (mm_wrap[max_i - lag_n] >= .3*mm_wrap[max_i]) {
-                        wm_wrap[max_i - lag_n] <- 1
-                        lag_n <- lag_n + 1
-                    } else {
-                        break
-                    }
-                }
-            }
-            wm_wrap[(length(wm) + 1):(2 * length(wm))]
-        }
-
         seasons <- foreach(x=1:dim(wm)[1]) %:% foreach(y=1:dim(wm)[2]) %do% {
             ident_seasons(as.vector(wm[x, y, ]), as.vector(mm[x, y, ]))
         }
