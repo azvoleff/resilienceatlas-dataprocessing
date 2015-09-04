@@ -19,7 +19,7 @@ library(spatial.tools)
 start_date <- as.Date('1985/1/1') # Inclusive
 end_date <- as.Date('2014/12/1') # Exclusive
 
-cl  <- makeCluster(12)
+cl  <- makeCluster(2)
 registerDoParallel(cl)
 
 # in_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
@@ -30,22 +30,22 @@ stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
 
 datafiles <- dir(in_folder, pattern='_CHIRPS_monthly_198101-201412.tif$')
+datafile <- datafiles[1]
 
 foreach (datafile=datafiles) %do% {
     timestamp()
     name <- str_extract(datafile, '^[a-zA-Z]*')
     print(paste0("Processing ", name, "..."))
 
+    # Calculate the band numbers that are needed
+    dates <- seq(as.Date('1981/1/1'), as.Date('2014/12/1'), by='months')
+    band_nums <- c(1:length(dates))[(dates >= start_date) & (dates <= end_date)]
+
     start_date_text <- format(start_date, '%Y%m%d')
     end_date_text <- format(end_date, '%Y%m%d')
     out_basename <- file.path(in_folder,
         paste0(gsub('[0-9-]*', '', file_path_sans_ext(datafile)),
               start_date_text, '-', end_date_text))
-
-    # Calculate the band numbers that are needed
-    dates <- seq(as.Date('1981/1/1'), as.Date('2014/12/1'), by='months')
-    dates <- dates[(dates >= start_date) & (dates <= end_date)]
-    band_nums <- c(1:length(dates))[(dates >= start_date) & (dates <= end_date)]
 
     chirps <- stack(file.path(in_folder, datafile), bands=band_nums)
 
