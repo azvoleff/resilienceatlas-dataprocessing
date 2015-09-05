@@ -11,6 +11,7 @@ library(ggplot2)
 library(tools)
 library(spatial.tools)
 library(doParallel)
+library(Rcpp)
 
 cl  <- makeCluster(2)
 registerDoParallel(cl)
@@ -82,6 +83,8 @@ foreach (datafile=datafiles) %do% {
     wm <- c(0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0)
     mm <- c(0, 10, 15, 8, 4, 2, 12, 18, 25, 20, 5, 3)
     ### TESTING
+    ###
+    identify_seasons(wm, mm, c(1, 1, 12))
 
     wet_seasons <- function(wm, mm, ...) {
         sourceCpp('4_calc_seasons.cpp')
@@ -91,6 +94,8 @@ foreach (datafile=datafiles) %do% {
         }
         as.array(seasons, dim=dim(wm))
     }
+
+    wet_seasons(wm, mm)
 
     wet_seasons <- rasterEngine(wm=peak_wet_months, mm=mean_mthly,
         fun=wet_seasons, datatype='INT2S', outbands=12, outfiles=1, 
