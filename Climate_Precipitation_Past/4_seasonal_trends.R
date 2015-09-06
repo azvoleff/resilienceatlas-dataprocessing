@@ -45,12 +45,13 @@ foreach (datafile=datafiles) %do% {
             # of series
             p_wrap <- c(p, p, p)
             # Find indices of maxima
-            indices <- which(diff(sign(diff(p_wrap))) == -2) + 1
-            # Remove maxima that are repeated due to wrapping of series
-            indices <- indices - length(p) # to allow local maxima in first position
-            indices <- indices[(indices >= 1) & (indices <= length(p))]
+            max_ind <- which(diff(sign(diff(p_wrap))) == -2) + 1
+            min_ind <- which(diff(sign(diff(p_wrap))) == 2) + 1
+            # Remove maxima/minima that are repeated due to wrapping of series
+            max_ind <- max_ind - length(p) # to allow local maxima in first position
+            max_ind <- max_ind[(max_ind >= 1) & (max_ind <= length(p))]
             out <- rep(0, length(p))
-            out[indices] <- 1
+            out[max_ind] <- 1
             out
         }
         maxima <- apply(mm, c(1, 2), find_maxima)
@@ -88,21 +89,30 @@ foreach (datafile=datafiles) %do% {
 
     wet_seasons <- function(wm, mm, ...) {
         sourceCpp('4_calc_seasons.cpp')
-        # Function to code seasonal data
-        seasons <- foreach(x=1:dim(wm)[1]) %:% foreach(y=1:dim(wm)[2]) %do% {
-            ident_seasons(as.vector(wm[x, y, ]), as.vector(mm[x, y, ]))
-        }
-        as.array(seasons, dim=dim(wm))
+        identify_seasons(wm, mm, dim(wm))
     }
-
-    wet_seasons(wm, mm)
 
     wet_seasons <- rasterEngine(wm=peak_wet_months, mm=mean_mthly,
         fun=wet_seasons, datatype='INT2S', outbands=12, outfiles=1, 
-        processing_unit="chunk", .packages=c('foreach', 'Rcpp', 'inline'),
+        processing_unit="chunk", .packages=c('Rcpp'),
         filename=paste0(out_basename, '_wetseasons'))
+
+wms <- as.array(peak_wet_months)
+wm <- wms[1, 1, ]
+mms <- as.array(mean_mthly)
+mm <- mms[1, 1, ]
+wss <- as.array(wet_seasons)
+ws <- wss[1, 1, ]
+plot_seasonal(wm, mm, ws)
+
+
+sourceCpp('4_calc_seasons.cpp')
+ws <- as.numeric(identify_seasons(wms[1, 1, ], mms[1, 1, ], c(1, 1, 12)))
+plot_seasonal(wm, mm, ws)
+ws <- as.numeric(identify_seasons(wms[100, 100, ], mms[100, 100, ], c(1, 1, 12)))
+plot_seasonal(wm, mm, ws)
     
-    plot(sum(peak_wet_months))
+plot(sum(peak_wet_months))
 
 }
 timestamp()
@@ -111,7 +121,7 @@ timestamp()
 # season maxima?)
 # mm: mean monthly precip
 # ws: wet season indicators (numeric indicators numbering wet seasons)
-plot_seasonal <- function(wm, mm=NA, ws=NA) {
+plot_seasonal <- function(wm, mm, ws) {
     d <- data.frame(month=factor(month.name, ordered=TRUE, levels=month.name),
                     precip=as.numeric(mm),
                     maxima=as.logical(wm),
