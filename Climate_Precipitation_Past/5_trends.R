@@ -103,7 +103,8 @@ foreach (datafile=datafiles) %do% {
         out
     }
 
-    decadal_trend <- rasterEngine(p=chirps, args=list(dates=dates),
+    decadal_trend <- rasterEngine(p=chirps,
+        args=list(dates=dates, included_subyears=included_subyears),
         fun=calc_decadal_trend, datatype='FLT4S', outbands=2, outfiles=1, 
         processing_unit="chunk",
         filename=paste0(out_basename, '_trend_decadal', season_string),
