@@ -19,6 +19,7 @@ library(spatial.tools)
 start_date <- as.Date('1985/1/1') # Inclusive
 end_date <- as.Date('2014/12/1') # Exclusive
 included_subyears <- NA
+included_subyears <- c(10, 11, 12)
 
 cl  <- makeCluster(3)
 registerDoParallel(cl)
@@ -90,7 +91,7 @@ foreach (datafile=datafiles) %do% {
         lm_coefs <- group_by(p_df, year, pixel) %>%
             summarize(ppt_annual=sum(ppt, na.rm=TRUE)) %>%
             group_by(pixel) %>%
-            mutate(ppt_annual_pctmean=(ppt_annual/sum(ppt_annual))*100) %>%
+            mutate(ppt_annual_pctmean=(ppt_annual/mean(ppt_annual))*100) %>%
             do(extract_coefs(.))
         # Note the *10 below to convert to decadal change
         out <- array(c(filter(lm_coefs, coef == "year")$estimate * 10,
