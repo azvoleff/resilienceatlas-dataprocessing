@@ -19,19 +19,21 @@ library(spatial.tools)
 start_date <- as.Date('1985/1/1') # Inclusive
 end_date <- as.Date('2014/12/1') # Exclusive
 included_subyears <- NA
-included_subyears <- c(10, 11, 12)
+#included_subyears <- c(10, 11, 12)
 
 cl  <- makeCluster(3)
 registerDoParallel(cl)
 
-# in_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
-# out_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
-in_folder <- file.path(prefix, "Vital_Signs", "CHIRPS-2.0")
-out_folder <- file.path(prefix, "Vital_Signs", "CHIRPS-2.0")
+in_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
+out_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
+# in_folder <- file.path(prefix, "Vital_Signs", "CHIRPS-2.0")
+# out_folder <- file.path(prefix, "Vital_Signs", "CHIRPS-2.0")
 stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
 
 datafiles <- dir(in_folder, pattern='_CHIRPS_monthly_198101-201412.tif$')
+
+datafiles <- datafiles[2:3]
 
 foreach (datafile=datafiles) %do% {
     timestamp()
@@ -109,6 +111,9 @@ foreach (datafile=datafiles) %do% {
         processing_unit="chunk",
         filename=paste0(out_basename, '_trend_decadal', season_string),
         .packages=c('dplyr', 'lubridate'))
+    writeRaster(decadal_trend,
+                filename=paste0(out_basename, '_trend_decadal', season_string, '_geotiff.tif'),
+                overwrite=TRUE)
 
 }
 

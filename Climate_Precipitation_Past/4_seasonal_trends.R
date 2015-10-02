@@ -34,59 +34,6 @@ foreach (datafile=datafiles) %do% {
     
     mean_mthly <- brick(file.path(in_folder, datafile))
 
-    calc_peak_wet_months <- function(mm, ...) {
-        # when used to scale mean_mthly
-        annual_total <- apply(mm, c(1, 2), sum)
-        # Converted to a vector so it will recycle properly when used to scale 
-        # mean_mthly
-        annual_total <- as.vector(annual_total)
-        find_maxima <- function(p) {
-            # Wrap series so that local maxima can be found at beginning or end 
-            # of series
-            p_wrap <- c(p, p, p)
-            # Find indices of maxima
-            max_ind <- which(diff(sign(diff(p_wrap))) == -2) + 1
-            min_ind <- which(diff(sign(diff(p_wrap))) == 2) + 1
-            # Remove maxima/minima that are repeated due to wrapping of series
-            max_ind <- max_ind - length(p) # to allow local maxima in first position
-            max_ind <- max_ind[(max_ind >= 1) & (max_ind <= length(p))]
-            out <- rep(0, length(p))
-            out[max_ind] <- 1
-            out
-        }
-        maxima <- apply(mm, c(1, 2), find_maxima)
-        # Reformat after apply so proper shape is retained
-        maxima <- aperm(maxima, c(2, 3, 1))
-
-        # Filter out hyperarid regions
-        maxima[annual_total < 25] <- 0
-        # Filter out maxima where maxima is less than 10% of annual total
-        maxima[(mm / annual_total) < .10] <- 0
-        maxima
-    }
-
-    peak_wet_months <- rasterEngine(mm=mean_mthly, fun=calc_peak_wet_months,
-        datatype='INT2S', outbands=12, outfiles=1, processing_unit="chunk", 
-        filename=paste0(out_basename, '_peakwetmonths'))
-    plot(peak_wet_months)
-
-    # Code the period of each wet or dry season by grouping months around a wet 
-    # season peak so long as there was precip in that month that was equal to 
-    # at least 30% of that wet season peak
-
-    ### TESTING
-    wm <- c(0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0)
-    mm <- c(0, 10, 15, 8, 4, 2, 12, 18, 25, 20, 5, 3)
-    # Year start peak:
-    wm <- c(1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0)
-    mm <- c(15, 8, 4, 2, 12, 18, 25, 20, 5, 3, 0, 10)
-    # Year end peak:
-    wm <- c(0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0)
-    mm <- c(0, 10, 15, 8, 4, 2, 12, 18, 25, 20, 5, 3)
-    ### TESTING
-    ###
-    identify_seasons(wm, mm, c(1, 1, 12))
-
     wet_seasons <- function(wm, mm, ...) {
         sourceCpp('4_calc_seasons.cpp')
         identify_seasons(wm, mm, dim(wm))
@@ -97,22 +44,24 @@ foreach (datafile=datafiles) %do% {
         processing_unit="chunk", .packages=c('Rcpp'),
         filename=paste0(out_basename, '_wetseasons'))
 
-wms <- as.array(peak_wet_months)
-wm <- wms[1, 1, ]
-mms <- as.array(mean_mthly)
-mm <- mms[1, 1, ]
-wss <- as.array(wet_seasons)
-ws <- wss[1, 1, ]
-plot_seasonal(wm, mm, ws)
+    # # Filter out hyperarid regions
+    # maxima[annual_total < 25] <- 0
+    # # Filter out maxima where maxima is less than 10% of annual total
+    # maxima[(mm / annual_total) < .10] <- 0
+    # maxima
 
+mms <- as.array(mean_mthly)
 
 sourceCpp('4_calc_seasons.cpp')
-ws <- as.numeric(identify_seasons(wms[1, 1, ], mms[1, 1, ], c(1, 1, 12)))
-plot_seasonal(wm, mm, ws)
-ws <- as.numeric(identify_seasons(wms[100, 100, ], mms[100, 100, ], c(1, 1, 12)))
-plot_seasonal(wm, mm, ws)
-    
-plot(sum(peak_wet_months))
+plot_seasonal(mms[1, 1, ], as.numeric(identify_seasons(mms[1, 1, ], c(1, 1, 12))))
+plot_seasonal(mms[100, 100, ], as.numeric(identify_seasons(mms[100, 100, ], c(1, 1, 12))))
+plot_seasonal(mms[200, 200, ], as.numeric(identify_seasons(mms[200, 200, ], c(1, 1, 12))))
+
+plot_seasonal(mms[1, 1, ], Ckmeans.1d.dp(mms[1, 1, ], c(2,4))$cluster)
+plot_seasonal(mms[100, 100, ], Ckmeans.1d.dp(mms[100, 100, ], c(2,4))$cluster)
+plot_seasonal(mms[200, 200, ], Ckmeans.1d.dp(mms[200, 200, ], c(2,4))$cluster)
+
+wss <- as.array(wet_seasons)
 
 }
 timestamp()
@@ -121,14 +70,13 @@ timestamp()
 # season maxima?)
 # mm: mean monthly precip
 # ws: wet season indicators (numeric indicators numbering wet seasons)
-plot_seasonal <- function(wm, mm, ws) {
+plot_seasonal <- function(mm, ws) {
     d <- data.frame(month=factor(month.name, ordered=TRUE, levels=month.name),
                     precip=as.numeric(mm),
-                    maxima=as.logical(wm),
-                    season=factor(ws))
+                    season=factor(ws, ordered=TRUE, levels=0:max(ws)))
     ggplot(d) + geom_bar(aes(month, precip, fill=season), stat='identity') +
         xlab('Month') +
         ylab('Mean precipitation (mm)') +
-        guides(colour=FALSE) + scale_fill_brewer(type='qual')
+        guides(colour=FALSE)# + scale_fill_brewer(type='qual')
 }
 

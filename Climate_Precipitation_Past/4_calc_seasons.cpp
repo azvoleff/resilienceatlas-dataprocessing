@@ -3,89 +3,101 @@
 #include<RcppArmadillo.h>
 #include<Rcpp.h>
 
-using namespace Rcpp;
+using namespace arma;
 
 // [[Rcpp::export]]
-arma::cube identify_seasons(NumericVector wms_vec, NumericVector mms_vec, IntegerVector dims) {
-    arma::cube wms(wms_vec.begin(), dims[0], dims[1], dims[2], false);
-    arma::cube mms(mms_vec.begin(), dims[0], dims[1], dims[2], false);
-    arma::cube out(dims[0], dims[1], dims[2]);
+cube identify_seasons(Rcpp::NumericVector mms_vec, Rcpp::IntegerVector dims) {
+    cube mms(mms_vec.begin(), dims[0], dims[1], dims[2], false);
+    cube out(dims[0], dims[1], dims[2]);
 
-    // Loop over the pixels within wm and mm
-    for (int x=0; x < wms.n_rows; x++) {
-        for (int y=0; y < wms.n_cols; y++) {
-            arma::vec wm = arma::vectorise(wms.tube(x, y));
-            arma::vec mm = arma::vectorise(mms.tube(x, y));
+    // Loop over the pixels within mm
+    for (int x=0; x < mms.n_rows; x++) {
+        for (int y=0; y < mms.n_cols; y++) {
+            vec mm = vectorise(mms.tube(x, y));
 
-            float total_annual_precip = arma::sum(mm);
+            // float total_annual_precip = sum(mm);
 
             // Extend series so seasons can wrap around beg/end of year
-            arma::vec wm_wrap = arma::repmat(wm, 3, 1);
-            arma::vec mm_wrap = arma::repmat(mm, 3, 1);
-            arma::uvec max_indices = arma::find(wm_wrap == 1);
-            // In forward direction, only need to process max indices in the 
-            // first two thirds of the wrapped series
-            arma::uvec fwd_indices = max_indices(arma::find(max_indices <= (2*wm.n_elem)));
-            for (int i=0; i < fwd_indices.n_elem; i++) {
-                int max_i = fwd_indices(i);
-                int lag_n = 1;
-                while (lag_n <= 6) {
-                    if (mm_wrap(max_i + lag_n) >= .3*mm_wrap(max_i)) {
-                        wm_wrap(max_i + lag_n) = 1;
-                        lag_n++;
-                    } else {
-                        break;
-                    }
-                }
-            }
-            // In backwards direction, only need to process max indices in the 
-            // second two thirds of the wrapped series
-            arma::uvec bwd_indices = max_indices(arma::find(max_indices > wm.n_elem));
-            for (int i=0; i < bwd_indices.n_elem; i++) {
-                int max_i = bwd_indices(i);
-                int lag_n = -1;
-                while (lag_n >= -6) {
-                    if (mm_wrap(max_i + lag_n) >= .3*mm_wrap(max_i)) {
-                        wm_wrap(max_i + lag_n) = 1;
-                        lag_n--;
-                    } else {
-                        break;
-                    }
-                }
-            }
+            vec mm_wrap = repmat(mm, 3, 1);
 
-            // Code any month with less than 60mm precip as dry
-            wm_wrap(arma::find(mm_wrap < 60)).fill(0);
+            uvec maxima = find(diff(sign(diff(mm_wrap))) == -2) + 1;
+            uvec minima = find(diff(sign(diff(mm_wrap))) == 2) - 1;
 
-            // Loop through and consecutively number the seasons
-            arma::vec seasons(wm_wrap.n_elem);
-            int seas_n = 1;
-            seasons(0) = seas_n;
-            for (int i=1; i < wm_wrap.n_elem; i++) {
-                if (wm_wrap(i) == wm_wrap(i - 1)) {
-                    seasons(i) = seas_n;
+            uvec extrema = sort(join_cols(maxima, minima));
+
+            maxima.print();
+            minima.print();
+
+            vec seasons(mm.n_elem);
+            // Loop over the middle section of the wrapped mm vector (mm_wrap).  
+            // seasons is of length equal to original (unwrapped) mm vector, so 
+            // note that when indexing seasons using i, need to subtract 
+            // mm.n_elem from i to index correctly.
+            for (int i=mm.n_elem; i < (mm.n_elem*2); i++) {
+                // don't alter seasonal assignment for extrema
+                if (any(extrema == i)) {
+                    seasons(i - mm.n_elem) = i;
                 } else {
-                    seas_n++;
-                    seasons(i) = seas_n;
+                    // identify extrema on left and right
+                    int ext_l = max(extrema(find(extrema < i)));
+                    int ext_r = min(extrema(find(extrema > i)));
+                    // temporary holder for this season assignment
+                    int this_season;
+                    if (mm_wrap(ext_l) > mm_wrap(i)) {
+                        // left extrema is greater than this point
+                        if ((mm_wrap(ext_l) / mm_wrap(i)) < (mm_wrap(i) / mm_wrap(ext_r))) {
+                            this_season = ext_l;
+                        } else {
+                            this_season = ext_r;
+                        }
+                    } else {
+                        // left extrema is less than this point
+                        if ((mm_wrap(ext_r) / mm_wrap(i)) < (mm_wrap(i) / mm_wrap(ext_l))) {
+                            this_season = ext_r;
+                        } else {
+                            this_season = ext_l;
+                        }
+                    }
+                    // handle wrapping around for season at the end of the year
+                    if (this_season >= mm.n_elem*2) {
+                        seasons(i - mm.n_elem) = seasons(0);
+                    } else {
+                        seasons(i - mm.n_elem) = this_season;
+                    }
                 }
             }
-            
-            // If a minima occurs in the middle of a wet season, start a new 
-            // season after that minima
 
-            // Number seasons so numbers are positive for rainy seasons with 
-            // the wettest season being 1, second being 2. Number dry seasons 
-            // with negative numbers, with driest being negative 1, second 
-            // driest -2
-            // arma::vec this_out = wm_wrap(arma::span(wm.n_elem + 1, 2 * wm.n_elem));
-            // for (int i=1; i < this_out.n_elem; i++) {
-            //     if (this_out(i) == this_out(i - 1))
-            //     out.tube(x, y) = wm_wrap(arma::span(wm.n_elem + 1, 2 * wm.n_elem));
+            // Don't allow seasons that are only a month long. If a season is 
+            // only a month long, join it with the closest adjoining season 
+            // (using same ratio test as above).
+            vec seas_ids = seasons(find_unique(seasons));
+            // for (int i=0; i < seas_ids.n_elem; i++) {
+            //     uvec ind = find(seasons == seas_ids);
+            //     if (ind.n_elem == 1) {
+            //         if ((mm_wrap(mm.n_elem + ind) / mm_wrap(mm.n_elem + 1) >
+            //             (mm_wrap(mm.n_elem + ind) / mm_wrap(mm.n_elem - 1)}
+            //     }
+            //
+            //     }
             // }
+            
 
-            // Pull out indicators from middle of wrapped series
-            //out.tube(x, y) = wm_wrap(arma::span(wm.n_elem, 2*wm.n_elem-1));
-            out.tube(x, y) = seasons(arma::span(wm.n_elem, 2*wm.n_elem-1));
+            // Setup list of season ids again because seasons may have changed 
+            // if any seasons were 1 month long.
+            seas_ids = seasons(find_unique(seasons));
+            vec seas_tot(seas_ids.n_elem);
+            for (int i=0; i < seas_tot.n_elem; i++) {
+                seas_tot(i) = sum(mm(find(seasons == seas_ids(i))));
+            }
+            // Order seas_ids by total precipitation received in each season.
+            seas_ids = seas_ids(sort_index(seas_tot));
+
+            // Number seasons in order of the total amount of rain received.
+            vec this_out = seasons;
+            for (int i=0; i < seas_ids.n_elem; i++) {
+                this_out(find(seasons == seas_ids(i))).fill(i);
+            }
+            out.tube(x, y) = this_out;
         }
     }
     return(out);
