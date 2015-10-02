@@ -3,19 +3,13 @@ PLOT_HEIGHT <- 6.5
 PLOT_DPI <- 300
 
 prefixes <- c('C:/Data', # HP current work
-              'S:/Data', # Shared blue drive
-              'D:/azvoleff/Data', # CI-TEAM
               'H:/Data', # Buffalo drive
-              'O:/Data', # Blue drive
-              'ENTER BERNADETTE FILE PATH HERE', # Bernadette's machine
-              '/localdisk/home/azvoleff/Data') # vertica1
+              'O:/Data', # Blue drive) # vertica1
 prefix <- prefixes[match(TRUE, unlist(lapply(prefixes, function(x) file_test('-d', x))))]
 
 temps <- c('C:/Temp', # Local
            'H:/Temp', # Buffalo drive
            'O:/Temp', # Blue drive (HP or thinkpad)
-           '/localdisk/home/azvoleff/Temp', # vertica1
-           '/tmp', # Bernadette's Mac
            'D:/Temp') # CI-TEAM
 temp <- temps[match(TRUE, unlist(lapply(temps, function(x) file_test('-d', x))))]
 
