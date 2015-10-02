@@ -100,6 +100,12 @@ sect9_ph_w1 <- read.spss(file.path(prefix, "GRP/LSMS/ET/2011/sect9_ph_w1.sav"),
 sect9_ph_w1 <- clear.labels(sect9_ph_w1)
 sect9_ph_w1 <- tbl_df(sect9_ph_w1)
 
+# Load post harvest data section 11 - data on harvest by field
+sect11_ph_w1 <- read.spss(file.path(prefix, "GRP/LSMS/ET/2011/sect11_ph_w1.sav"), 
+                 to.data.frame=TRUE)
+sect11_ph_w1 <- clear.labels(sect11_ph_w1)
+sect11_ph_w1 <- tbl_df(sect11_ph_w1)
+
 # Community-level data on basic service access
 sect4_com_w1 <- read.spss(file.path(prefix, "GRP/LSMS/ET/2011/sect4_com_w1.sav"), 
                  to.data.frame=TRUE)
@@ -121,6 +127,12 @@ sect6_com_w1 <- tbl_df(sect6_com_w1)
 
 # sect9_ph_w1 <- merge(sect9_ph_w1, select(hh_geo, household_id, LON_DD_MOD, 
 # LAT_DD_MOD, srtm), all.x=TRUE)
+
+##################################
+###  Post-harvest losses
+table(sect11_ph_w1$ph_s11q15_a)
+table(sect11_ph_w1$ph_s11q15_b)
+table(sect11_ph_w1$ph_s11q15_c)
 
 ##################################
 ###  Education
