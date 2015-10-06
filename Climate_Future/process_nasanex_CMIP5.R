@@ -30,15 +30,15 @@ files$url <- gsub('http://nasanex.s3.amazonaws.com', 's3://nasanex', files$url)
 
 files <- arrange(files, scenario, variable, model, period, year)
 
-# min_year <- 1980
-# max_year <- 1999
-# scenarios <- 'historical'
+min_year <- 1980
+max_year <- 1999
+scenarios <- 'historical'
 
-min_year <- 2040
-max_year <- 2059
+# min_year <- 2040
+# max_year <- 2059
 # min_year <- 2080
 # max_year <- 2099
-scenarios <- c('rcp45', 'rcp85')
+# scenarios <- c('rcp45', 'rcp85')
 
 start_day <- 1
 stopifnot(start_day >= 1 & start_day <=365)
@@ -46,6 +46,32 @@ stopifnot(start_day >= 1 & start_day <=365)
 end_day <- 365
 stopifnot(end_day >= 1 & end_day <=365)
 variables <- c('pr', 'tasmax', 'tasmin')
+
+# Function to sum layers of CMIP5 hdf5 files in block-by-block fashion to 
+# reduce memory usage
+sum_h5_layers <- function(filename, datasetname, first_layer, last_layer, 
+                          blocksize=50) {
+    if ((last_layer - first_layer) > blocksize) {
+        start_layers <- seq(first_layer, last_layer, blocksize)
+        end_layers <- c(start_layers[2:length(start_layers)] - 1, last_layer)
+        indices <- cbind(start_layers, end_layers)
+        n <- 1
+        for (index in 1:nrow(indices)) {
+            d <- h5read(filename, datasetname, index=list(NULL, NULL, c(indices[n, 1]:indices[n, 2])))
+            if (n == 1) {
+                d_sum  <- apply(d, c(1, 2), sum)
+            } else {
+                d_sum  <- d_sum + apply(d, c(1, 2), sum)
+            }
+            n <- n + 1;
+        }
+    } else {
+        d <- h5read(filename, datasetname, index=list(NULL, NULL, c(first_layer:last_layer)))
+        d_sum  <- apply(d, c(1, 2), sum)
+    }
+    H5close()
+    return(d_sum)
+}
 
 # Loop over models
 foreach(this_variable=variables) %:% foreach(this_scenario=scenarios) %do% {
@@ -59,7 +85,7 @@ foreach(this_variable=variables) %:% foreach(this_scenario=scenarios) %do% {
     mean_totals <- foreach(this_model=unique(these_files$model),
                            .combine=abind,
                            .packages=c('abind', 'iterators', 'rhdf5', 
-                                       'foreach', 'dplyr')) %dopar% {
+                                       'foreach', 'dplyr')) %do% {
         print(paste0('Processing ', this_model))
 
         # Loop over files from this model
@@ -76,27 +102,23 @@ foreach(this_variable=variables) %:% foreach(this_scenario=scenarios) %do% {
             lon[lon > 180] <- lon[lon > 180] - 360
             lat <- h5read(temp_file, '/lat')
 
-            d <- h5read(temp_file, paste0('/', s3file$variable))
             # TODO: Handle case of end day that is less than start day, meaning 
             # that the season spans two calendar years.
-            if (!(start_day == 1 & end_day == 365)) {
-                if (end_day == 365) {
-                    if (dim(d)[3] == 366) {
-                        this_end_day <- 366
-                    } else {
-                        this_end_day <- 365
-                    }
-                } else {
-                    this_end_day <- end_day
-                }
-                d <- d[, , start_day:this_end_day]
+            
+            h5_meta <- h5ls(temp_file)
+            n_days <- as.numeric(h5_meta[match('time', h5_meta$name), ]$dim)
+
+            # Ensure full year is included even with leap years
+            if (end_day == 365 & n_days == 366) {
+                end_day <- 366
             }
-            d <- apply(d, c(1, 2), sum)
-            d <- aperm(d, c(2, 1))
+            d <- sum_h5_layers(temp_file, paste0('/', s3file$variable), 
+                               start_day, end_day)
 
             # Reorder rows and columns so they are ordered according to 
             # lat/long with ul corner having highest latitude and lowest 
             # longitude
+            d <- t(d)
             d <- d[order(lat, decreasing=TRUE), ]
             d <- d[ , order(lon)]
 
@@ -111,7 +133,7 @@ foreach(this_variable=variables) %:% foreach(this_scenario=scenarios) %do% {
                      xmn=-180, xmx=180, ymn=-90, ymx=90, crs='+init=epsg:4326')
         out <- setValues(out, totals)
 
-        out_file <-  file.path(out_folder, paste0(file_basename, "_", this_model, ".tif"))
+        out_file <-  file.path(out_folder, paste0(file_basename, "_", this_model, "99999999.tif"))
         writeRaster(out, out_file, overwrite=TRUE)
         system2('aws', args=c('s3', 'cp', out_file, s3_out))
         
