@@ -1,5 +1,3 @@
-# Load data from S3
-
 library(RCurl)
 library(jsonlite)
 library(stringr)
@@ -33,14 +31,14 @@ files$url <- gsub('http://nasanex.s3.amazonaws.com', 's3://nasanex', files$url)
 files <- arrange(files, scenario, variable, model, period, year)
 
 min_year <- 1980
-max_year <- 1982
+max_year <- 1999
 start_day <- 1
 stopifnot(start_day >= 1 & start_day <=365)
 # For full year, set end_day to 365. Leap years are handled automatically.
 end_day <- 365
 stopifnot(end_day >= 1 & end_day <=365)
 scenarios <- 'historical'
-scenarios <- c('rcp45', 'rcp85')
+#scenarios <- c('rcp45', 'rcp85')
 variables <- c('pr', 'tasmax', 'tasmin')
 
 ############# TESTING ONLY
@@ -136,3 +134,6 @@ foreach(this_variable=variables) %:% foreach(this_scenario=scenarios) %do% {
 
     system2('aws', args=c('s3', 'cp', out_file, s3_out))
 }
+
+print("Finished processing.")
+timestamp()
