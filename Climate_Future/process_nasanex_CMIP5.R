@@ -30,23 +30,22 @@ files$url <- gsub('http://nasanex.s3.amazonaws.com', 's3://nasanex', files$url)
 
 files <- arrange(files, scenario, variable, model, period, year)
 
-min_year <- 1980
-max_year <- 1999
+# min_year <- 1980
+# max_year <- 1999
+# scenarios <- 'historical'
+
+min_year <- 2040
+max_year <- 2059
+# min_year <- 2080
+# max_year <- 2099
+scenarios <- c('rcp45', 'rcp85')
+
 start_day <- 1
 stopifnot(start_day >= 1 & start_day <=365)
 # For full year, set end_day to 365. Leap years are handled automatically.
 end_day <- 365
 stopifnot(end_day >= 1 & end_day <=365)
-scenarios <- 'historical'
-#scenarios <- c('rcp45', 'rcp85')
 variables <- c('pr', 'tasmax', 'tasmin')
-
-############# TESTING ONLY
-# this_variable <- 'pr'
-# this_scenario <- scenarios[1]
-# this_model <- files$model[1]
-# s3file <- files[1,]
-############# /TESTING ONLY
 
 # Loop over models
 foreach(this_variable=variables) %:% foreach(this_scenario=scenarios) %do% {
