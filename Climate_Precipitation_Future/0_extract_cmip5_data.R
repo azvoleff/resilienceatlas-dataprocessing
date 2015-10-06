@@ -11,8 +11,7 @@ library(raster)
 library(foreach)
 library(doParallel)
 
-s3_out_bucket <- 'ci-vsdata'
-s3_out_folder <- '/CHIRPS-2.0/results'
+s3_out <- 's3://ci-vsdata/CMIP5/results/'
 
 cl <- makeCluster(4)
 registerDoParallel(cl)
@@ -28,46 +27,58 @@ names(files) <- c('variable', 'period', 'method', 'scenario', 'something',
                   'model', 'year')
 files$year <- as.numeric(gsub('.nc', '', files$year))
 files$url <- as.character(urls)
+# Convert URLs to S3 paths
+files$url <- gsub('http://nasanex.s3.amazonaws.com', 's3://nasanex', files$url)
 
 files <- arrange(files, scenario, variable, model, period, year)
 
-# group_by(files, variable, model, scenario) %>%
-#     summarise(n=length(year), first=min(year), last=max(year))
-
-
-# give differences as relative to the 1980-2000 climatology.
-files <- filter(files, year >= 1980, year <= 1999,
-                variable == 'pr', scenario == 'historical')
-
 min_year <- 1980
-max_year <- 1981
+max_year <- 1982
 start_day <- 1
 stopifnot(start_day >= 1 & start_day <=365)
 # For full year, set end_day to 365. Leap years are handled automatically.
 end_day <- 365
 stopifnot(end_day >= 1 & end_day <=365)
 scenarios <- 'historical'
-variables <- 'pr'
+scenarios <- c('rcp45', 'rcp85')
+variables <- c('pr', 'tasmax', 'tasmin')
+
+############# TESTING ONLY
+# this_variable <- 'pr'
+# this_scenario <- scenarios[1]
+# this_model <- files$model[1]
+# s3file <- files[1,]
+############# /TESTING ONLY
 
 # Loop over models
+timestamp()
 foreach(this_variable=variables) %:% foreach(this_scenario=scenarios) %do% {
+    timestamp()
+    print(paste0('Processing ', this_variable, ', ', this_scenario))
     file_basename <- paste0(this_variable, '_', this_scenario, '_', min_year, '-', 
                             max_year, '_', start_day, '-', end_day)
     these_files <- filter(files, year >= min_year, year <= max_year,
-                          variable == this_variable, scenario == this_scenario,
-                          model %in% c('CNRM-CM5', 'ACCESS1-0'))
+                          variable == this_variable, scenario == this_scenario)
 
     mean_totals <- foreach(this_model=unique(these_files$model),
-                           .packages=c('abind', 'iterators'),
-                           .combine=abind) %do% {
+                           .combine=abind,
+                           .packages=c('abind', 'iterators', 'rhdf5', 
+                                       'foreach', 'dplyr')) %dopar% {
         print(paste0('Processing ', this_model))
 
-        # Loop over files within this model
-        totals <- foreach(s3file=iter(filter(these_files, model == this_model), by='row'), 
-                            .packages=c('rhdf5'), .combine=abind) %dopar% {
-            print(s3file)
+        # Loop over files from this model
+        model_files <- filter(these_files, model == this_model)
+        totals <- foreach(s3file=iter(model_files, by='row'), .combine=abind) %do% {
             temp_file <- tempfile(fileext='.hdf')
-            download.file(s3file$url, temp_file)
+            print(paste(temp_file, s3file$url))
+            system2('aws', args=c('s3', 'cp', s3file$url, temp_file))
+            stopifnot(file_test('f', temp_file))
+
+            # Read coordinates and convert so they can be read in properly
+            lon <- h5read(temp_file, '/lon')
+            # Convert longitudes to range between -180 and 180
+            lon[lon > 180] <- lon[lon > 180] - 360
+            lat <- h5read(temp_file, '/lat')
 
             d <- h5read(temp_file, paste0('/', s3file$variable))
             # TODO: Handle case of end day that is less than start day, meaning 
@@ -84,8 +95,16 @@ foreach(this_variable=variables) %:% foreach(this_scenario=scenarios) %do% {
                 }
                 d <- d[, , start_day:this_end_day]
             }
-            
             d <- apply(d, c(1, 2), sum)
+            d <- aperm(d, c(2, 1))
+
+            # Reorder rows and columns so they are ordered according to 
+            # lat/long with ul corner having highest latitude and lowest 
+            # longitude
+            d <- d[order(lat, decreasing=TRUE), ]
+            d <- d[ , order(lon)]
+
+            unlink(temp_file)
 
             # Calculate annual total and return as a 1 layer array
             return(array(d, dim=c(dim(d), 1)))
@@ -98,7 +117,7 @@ foreach(this_variable=variables) %:% foreach(this_scenario=scenarios) %do% {
 
         out_file <-  file.path(out_folder, paste0(file_basename, "_", this_model, ".tif"))
         writeRaster(out, out_file, overwrite=TRUE)
-        system(paste('s3put -b', s3_out_bucket, '-p', out_folder, '-k', s3_out_folder, out_file))
+        system2('aws', args=c('s3', 'cp', out_file, s3_out))
         
         # Calculate mean for this model, and make it into a 1 layer array
         mod_mean <- apply(totals, c(1, 2), mean)
@@ -115,5 +134,5 @@ foreach(this_variable=variables) %:% foreach(this_scenario=scenarios) %do% {
     out_file <- file.path(out_folder, paste0(file_basename, '_modelmeans.tif'))
     writeRaster(out, out_file, overwrite=TRUE)
 
-    system(paste('s3put -b', s3_out_bucket, '-p', out_folder, '-k', s3_out_folder, out_file))
+    system2('aws', args=c('s3', 'cp', out_file, s3_out))
 }
