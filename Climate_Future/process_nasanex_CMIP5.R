@@ -49,7 +49,6 @@ variables <- c('pr', 'tasmax', 'tasmin')
 ############# /TESTING ONLY
 
 # Loop over models
-timestamp()
 foreach(this_variable=variables) %:% foreach(this_scenario=scenarios) %do% {
     timestamp()
     print(paste0('Processing ', this_variable, ', ', this_scenario))
