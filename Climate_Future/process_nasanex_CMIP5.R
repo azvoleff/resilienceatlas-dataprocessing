@@ -11,7 +11,7 @@ library(doParallel)
 
 s3_out <- 's3://ci-vsdata/CMIP5/results/'
 
-cl <- makeCluster(4)
+cl <- makeCluster(3)
 registerDoParallel(cl)
 
 out_folder <- '~/temp'
