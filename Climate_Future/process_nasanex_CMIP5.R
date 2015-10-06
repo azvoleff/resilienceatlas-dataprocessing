@@ -68,7 +68,7 @@ foreach(this_variable=variables) %:% foreach(this_scenario=scenarios) %do% {
             temp_file <- tempfile(fileext='.hdf')
             print(paste(temp_file, s3file$url))
             system2('aws', args=c('s3', 'cp', s3file$url, temp_file))
-            stopifnot(file_test('f', temp_file))
+            stopifnot(file_test('-f', temp_file))
 
             # Read coordinates and convert so they can be read in properly
             lon <- h5read(temp_file, '/lon')
