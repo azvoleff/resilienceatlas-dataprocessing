@@ -140,7 +140,7 @@ foreach(this_variable=variables) %:% foreach(this_scenario=scenarios) %do% {
                      xmn=-180, xmx=180, ymn=-90, ymx=90, crs='+init=epsg:4326')
         out <- setValues(out, totals)
 
-        out_file <-  file.path(out_folder, paste0(file_basename, "_", this_model, "99999999.tif"))
+        out_file <-  file.path(out_folder, paste0(file_basename, "_", this_model, ".tif"))
         writeRaster(out, out_file, overwrite=TRUE)
         system2('aws', args=c('s3', 'cp', out_file, s3_out))
         
