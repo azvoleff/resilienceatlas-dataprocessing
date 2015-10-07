@@ -11,7 +11,7 @@ library(doParallel)
 
 s3_out <- 's3://ci-vsdata/CMIP5/results/'
 
-cl <- makeCluster(3)
+cl <- makeCluster(4)
 registerDoParallel(cl)
 
 out_folder <- '~/temp'
@@ -30,15 +30,15 @@ files$url <- gsub('http://nasanex.s3.amazonaws.com', 's3://nasanex', files$url)
 
 files <- arrange(files, scenario, variable, model, period, year)
 
-min_year <- 1980
-max_year <- 1999
-scenarios <- 'historical'
+# min_year <- 1980
+# max_year <- 1999
+# scenarios <- 'historical'
 
 # min_year <- 2040
 # max_year <- 2059
-# min_year <- 2080
-# max_year <- 2099
-# scenarios <- c('rcp45', 'rcp85')
+min_year <- 2080
+max_year <- 2099
+scenarios <- c('rcp45', 'rcp85')
 
 start_day <- 1
 stopifnot(start_day >= 1 & start_day <=365)
@@ -85,7 +85,7 @@ foreach(this_variable=variables) %:% foreach(this_scenario=scenarios) %do% {
     mean_totals <- foreach(this_model=unique(these_files$model),
                            .combine=abind,
                            .packages=c('abind', 'iterators', 'rhdf5', 
-                                       'foreach', 'dplyr')) %do% {
+                                       'foreach', 'dplyr')) %dopar% {
         print(paste0('Processing ', this_model))
 
         # Loop over files from this model
@@ -109,11 +109,17 @@ foreach(this_variable=variables) %:% foreach(this_scenario=scenarios) %do% {
             n_days <- as.numeric(h5_meta[match('time', h5_meta$name), ]$dim)
 
             # Ensure full year is included even with leap years
-            if (end_day == 365 & n_days == 366) {
-                end_day <- 366
+            if (end_day == 365) {
+                if(n_days == 366) {
+                    this_end_day <- 366
+                } else {
+                    this_end_day <- 365
+                }
+            } else {
+                this_end_day <- end_day
             }
             d <- sum_h5_layers(temp_file, paste0('/', s3file$variable), 
-                               start_day, end_day)
+                               start_day, this_end_day)
 
             # Reorder rows and columns so they are ordered according to 
             # lat/long with ul corner having highest latitude and lowest 
@@ -122,6 +128,7 @@ foreach(this_variable=variables) %:% foreach(this_scenario=scenarios) %do% {
             d <- d[order(lat, decreasing=TRUE), ]
             d <- d[ , order(lon)]
 
+            H5close()
             unlink(temp_file)
 
             # Calculate annual total and return as a 1 layer array
