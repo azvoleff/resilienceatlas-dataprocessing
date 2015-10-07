@@ -85,7 +85,7 @@ foreach(this_variable=variables) %:% foreach(this_scenario=scenarios) %do% {
     mean_totals <- foreach(this_model=unique(these_files$model),
                            .combine=abind,
                            .packages=c('abind', 'iterators', 'rhdf5', 
-                                       'foreach', 'dplyr')) %dopar% {
+                                       'foreach', 'dplyr', 'raster')) %dopar% {
         print(paste0('Processing ', this_model))
 
         # Loop over files from this model
