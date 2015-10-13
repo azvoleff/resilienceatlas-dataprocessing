@@ -28,6 +28,7 @@ stopifnot(file_test('-d', out_folder))
 datafiles <- dir(in_folder, pattern='_CHIRPS_monthly_198101-201412.tif$')
 
 anom_periods <- c(3, 6, 12)
+mean_monthly_periods <- c('1985-1999', '2000-2014')
 
 foreach (datafile=datafiles) %do% {
     timestamp()
@@ -46,6 +47,7 @@ foreach (datafile=datafiles) %do% {
         # bands ordering
         as.array(mthly_mean, transpose=TRUE)
     }
+    foreach(
     mthly_mean <- rasterEngine(p=chirps, fun=calc_monthly_mean,
         datatype='FLT4S', outbands=12, outfiles=1, processing_unit="chunk", 
         chunk_format="raster", filename=paste0(out_basename, '_mean_monthly'),
