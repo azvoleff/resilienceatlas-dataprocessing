@@ -6,15 +6,20 @@ library(rhdf5)
 library(abind)
 library(iterators)
 library(raster)
+library(rgdal)
 library(foreach)
 library(doParallel)
 
 s3_out <- 's3://ci-vsdata/CMIP5/results/'
 
+source('../ec2/get_cluster_hosts.R')
+get_cluster_hosts()
+
 cl <- makeCluster(4)
 registerDoParallel(cl)
 
 out_folder <- '~/temp'
+stopifnot(file_test('-d', out_folder))
 
 # List available datasets
 s3files <- fromJSON("https://nasanex.s3.amazonaws.com/NEX-GDDP/nex-gddp-s3-files.json")
@@ -85,7 +90,8 @@ foreach(this_variable=variables) %:% foreach(this_scenario=scenarios) %do% {
     mean_totals <- foreach(this_model=unique(these_files$model),
                            .combine=abind,
                            .packages=c('abind', 'iterators', 'rhdf5', 
-                                       'foreach', 'dplyr', 'raster')) %dopar% {
+                                       'foreach', 'dplyr', 'raster',
+                                       'rgdal')) %dopar% {
         print(paste0('Processing ', this_model))
 
         # Loop over files from this model
