@@ -13,9 +13,8 @@ library(doParallel)
 s3_out <- 's3://ci-vsdata/CMIP5/results/'
 
 source('../ec2/get_cluster_hosts.R')
-get_cluster_hosts()
 
-cl <- makeCluster(4)
+cl <- makeCluster(rep(get_cluster_hosts(), each=4))
 registerDoParallel(cl)
 
 out_folder <- '~/temp'
@@ -45,12 +44,13 @@ min_year <- 2080
 max_year <- 2099
 scenarios <- c('rcp45', 'rcp85')
 
+variables <- c('pr', 'tasmax', 'tasmin')
+
 start_day <- 1
 stopifnot(start_day >= 1 & start_day <=365)
 # For full year, set end_day to 365. Leap years are handled automatically.
 end_day <- 365
 stopifnot(end_day >= 1 & end_day <=365)
-variables <- c('pr', 'tasmax', 'tasmin')
 
 # Function to sum layers of CMIP5 hdf5 files in block-by-block fashion to 
 # reduce memory usage
