@@ -4,7 +4,7 @@ PLOT_DPI <- 300
 
 prefixes <- c('C:/Data', # HP current work
               'H:/Data', # Buffalo drive
-              'O:/Data', # Blue drive) # vertica1
+              'O:/Data') # Blue drive) # vertica1
 prefix <- prefixes[match(TRUE, unlist(lapply(prefixes, function(x) file_test('-d', x))))]
 
 temps <- c('C:/Temp', # Local
