@@ -10,7 +10,7 @@ prefix <- prefixes[match(TRUE, unlist(lapply(prefixes, function(x) file_test('-d
 temps <- c('C:/Temp', # Local
            'H:/Temp', # Buffalo drive
            'O:/Temp', # Blue drive (HP or thinkpad)
-           'D:/Temp') # CI-TEAM
+           '~/temp') # CI-TEAM
 temp <- temps[match(TRUE, unlist(lapply(temps, function(x) file_test('-d', x))))]
 
 library(raster)
