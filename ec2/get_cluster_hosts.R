@@ -1,6 +1,7 @@
 library(stringr)
 
 get_cluster_hosts <- function() {
+    require(stringr)
     con  <- file('/etc/hosts', open="r")
     cluster_hosts <- c()
     while (length(this_line <- readLines(con, n = 1, warn = FALSE)) > 0) {

@@ -13,8 +13,6 @@ source('../ec2/get_cluster_hosts.R')
 cl <- makeCluster(rep(get_cluster_hosts(), each=4))
 registerDoParallel(cl)
 
-in_folder <- file.path(prefix, "GRP", "CMIP5")
-
 s3_in <- 's3://ci-vsdata/CMIP5/seasonal_totals/'
 s3_out <- 's3://ci-vsdata/CMIP5/results/'
 
@@ -31,6 +29,7 @@ s3_files$season <- gsub('_', '', str_extract(s3_files$file, '_[0-9]{1,3}-[0-9]{1
 ## testing
 
 writeRasterS3 <- function(r, S3_loc) {
+    require(raster)
     temp_file <- tempfile(fileext='.tif')
     writeRaster(r, filename=temp_file)
     system2('aws', args=c('s3', 'cp', temp_file, S3_loc))
