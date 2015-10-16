@@ -30,6 +30,13 @@ s3_files$season <- gsub('_', '', str_extract(s3_files$file, '_[0-9]{1,3}-[0-9]{1
 # this_season <- '1-365'
 ## testing
 
+writeRasterS3 <- function(r, S3_loc) {
+    temp_file <- tempfile(fileext='.tif')
+    writeRaster(r, filename=temp_file)
+    system2('aws', args=c('s3', 'cp', temp_file, S3_loc))
+    unlink(temp_file)
+}
+
 foreach(this_variable=unique(s3_files$variable)) %:%
     foreach(this_season=unique(s3_files$season)) %do% {
 
@@ -50,9 +57,7 @@ foreach(this_variable=unique(s3_files$variable)) %:%
     }
     s3_out_base_m <- paste0(s3_out, paste(this_variable, 'historical', 
         base_period, this_season, 'modelmeans.tif', sep='_'))
-    temp_file <- tempfile(fileext='.tif')
-    writeRaster(base_m, filename=temp_file)
-    system2('aws', args=c('s3', 'cp', temp_file, s3_out_base_m))
+    writeRasterS3(base_m, s3_out_base_m)
 
     # Calculate multimodel mean for baseline (base_mmm)
     s3_out_base_mmm <- paste0(s3_out, paste(this_variable, 'historical', 
@@ -71,7 +76,7 @@ foreach(this_variable=unique(s3_files$variable)) %:%
     # Calculate scenario model means
     scenarios <- unique(s3_files$scenario[s3_files$scenario != 'historical'])
     periods <- unique(s3_files$period[s3_files$scenario != 'historical'])
-    foreach(this_scenario=scenarios) %:% {
+    foreach(this_scenario=scenarios) %:% 
         foreach(this_period=periods, .packages=c('raster', 'dplyr')) %dopar% {
 
         scen_files <- filter(s3_files,
@@ -79,44 +84,42 @@ foreach(this_variable=unique(s3_files$variable)) %:%
                              season == this_season,
                              scenario == this_scenario,
                              period == this_period)
-            scen_m <- foreach(scen_file=scen_files$file, .combine=stack) %do% {
-                temp_file <- tempfile(fileext='.tif')
-                system2('aws', args=c('s3', 'cp', paste0(s3_in, scen_file), temp_file))
-                model_data <- brick(temp_file)
-                mod_mean <- mean(model_data)
-                unlink(temp_file)
-                return(mod_mean)
-            }
-            temp_file <- tempfile(fileext='.tif')
-            s3_out_scen_m <- paste0(s3_out, paste(this_variable, this_scenario, 
-                base_period, this_season, 'modelmeans.tif', sep='_'))
-            writeRaster(baseline, filename=temp_file)
-            system2('aws', args=c('s3', 'cp', temp_file, s3_out_scen_m))
 
-            # Calc scenario multimodel mean
+        scen_m <- foreach(scen_file=scen_files$file, .combine=stack) %do% {
             temp_file <- tempfile(fileext='.tif')
-            scen_mmm <- calc(scen_m, mean, filename=temp_file)
-            s3_out_scen_mmm <- paste0(s3_out, paste(this_variable, scenario, 
-                                                this_period, this_season, 
-                                                'multimodelmean.tif', sep='_'))
-            system2('aws', args=c('s3', 'cp', temp_file, s3_out_scen_mmm))
-
-            # Calc scenario multimodel sd
-            temp_file <- tempfile(fileext='.tif')
-            scen_mmsd <- calc(scen_m, mean, filename=temp_file)
-            s3_out_scen_mmsd <- paste0(s3_out, paste(this_variable, scenario, 
-                                                this_period, this_season, 
-                                                'multimodelsd.tif', sep='_'))
-            system2('aws', args=c('s3', 'cp', temp_file, s3_out_scen_mmsd))
-
-            # Calculate percent difference
-            temp_file <- tempfile(fileext='.tif')
-            pct_diff <- overlay(scen_mmm, base_mmm, fun=function(scen, base) {
-                    ((scen - base) / base) * 100
-                }, filename=temp_file)
-            s3_out_pctdiff <- paste0(s3_out, paste(this_variable, this_scenario,
-                'pctdiff', base_period, 'vs', this_period, sep='_'), '.tif')
-            system2('aws', args=c('s3', 'cp', temp_file, s3_out_pctdiff))
+            system2('aws', args=c('s3', 'cp', paste0(s3_in, scen_file), temp_file))
+            model_data <- brick(temp_file)
+            mod_mean <- mean(model_data)
+            unlink(temp_file)
+            return(mod_mean)
         }
+        s3_out_scen_m <- paste0(s3_out, paste(this_variable, this_scenario, 
+            base_period, this_season, 'modelmeans.tif', sep='_'))
+        writeRasterS3(baseline, s3_out_scen_m)
+
+        # Calc scenario multimodel mean
+        temp_file <- tempfile(fileext='.tif')
+        scen_mmm <- calc(scen_m, mean, filename=temp_file)
+        s3_out_scen_mmm <- paste0(s3_out, paste(this_variable, scenario, 
+                                            this_period, this_season, 
+                                            'multimodelmean.tif', sep='_'))
+        system2('aws', args=c('s3', 'cp', temp_file, s3_out_scen_mmm))
+
+        # Calc scenario multimodel sd
+        temp_file <- tempfile(fileext='.tif')
+        scen_mmsd <- calc(scen_m, mean, filename=temp_file)
+        s3_out_scen_mmsd <- paste0(s3_out, paste(this_variable, scenario, 
+                                            this_period, this_season, 
+                                            'multimodelsd.tif', sep='_'))
+        system2('aws', args=c('s3', 'cp', temp_file, s3_out_scen_mmsd))
+
+        # Calculate percent difference
+        temp_file <- tempfile(fileext='.tif')
+        pct_diff <- overlay(scen_mmm, base_mmm, fun=function(scen, base) {
+                ((scen - base) / base) * 100
+            }, filename=temp_file)
+        s3_out_pctdiff <- paste0(s3_out, paste(this_variable, this_scenario,
+            'pctdiff', base_period, 'vs', this_period, sep='_'), '.tif')
+        system2('aws', args=c('s3', 'cp', temp_file, s3_out_pctdiff))
     }
 }
