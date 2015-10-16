@@ -77,7 +77,8 @@ foreach(this_variable=unique(s3_files$variable)) %:%
     scenarios <- unique(s3_files$scenario[s3_files$scenario != 'historical'])
     periods <- unique(s3_files$period[s3_files$scenario != 'historical'])
     foreach(this_scenario=scenarios) %:% 
-        foreach(this_period=periods, .packages=c('raster', 'dplyr')) %dopar% {
+        foreach(this_period=periods,
+                .packages=c('raster', 'dplyr', 'foreach')) %dopar% {
 
         scen_files <- filter(s3_files,
                              variable == this_variable,
@@ -95,12 +96,12 @@ foreach(this_variable=unique(s3_files$variable)) %:%
         }
         s3_out_scen_m <- paste0(s3_out, paste(this_variable, this_scenario, 
             base_period, this_season, 'modelmeans.tif', sep='_'))
-        writeRasterS3(baseline, s3_out_scen_m)
+        writeRasterS3(scen_m, s3_out_scen_m)
 
         # Calc scenario multimodel mean
         temp_file <- tempfile(fileext='.tif')
         scen_mmm <- calc(scen_m, mean, filename=temp_file)
-        s3_out_scen_mmm <- paste0(s3_out, paste(this_variable, scenario, 
+        s3_out_scen_mmm <- paste0(s3_out, paste(this_variable, this_scenario, 
                                             this_period, this_season, 
                                             'multimodelmean.tif', sep='_'))
         system2('aws', args=c('s3', 'cp', temp_file, s3_out_scen_mmm))
@@ -108,7 +109,7 @@ foreach(this_variable=unique(s3_files$variable)) %:%
         # Calc scenario multimodel sd
         temp_file <- tempfile(fileext='.tif')
         scen_mmsd <- calc(scen_m, mean, filename=temp_file)
-        s3_out_scen_mmsd <- paste0(s3_out, paste(this_variable, scenario, 
+        s3_out_scen_mmsd <- paste0(s3_out, paste(this_variable, this_scenario, 
                                             this_period, this_season, 
                                             'multimodelsd.tif', sep='_'))
         system2('aws', args=c('s3', 'cp', temp_file, s3_out_scen_mmsd))
