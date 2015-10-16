@@ -40,8 +40,7 @@ foreach(this_variable=unique(s3_files$variable)) %:%
 
     # Calculate baseline mean (base_m)
     base_m <- foreach(base_file=base_files$file, .combine=stack,
-                      .packages=c('raster')) %
-                          dopar% {
+                      .packages=c('raster')) %dopar% {
         temp_file <- tempfile(fileext='.tif')
         system2('aws', args=c('s3', 'cp', paste0(s3_in, base_file), temp_file))
         model_data <- brick(temp_file)
