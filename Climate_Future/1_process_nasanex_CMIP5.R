@@ -124,7 +124,7 @@ foreach(in_file=iter(in_files, by='row'),
 
     n_days <- as.numeric(h5_meta[match('time', h5_meta$name), ]$dim)
 
-    foreach(iter(season=seasons, by='row')) %do% {
+    foreach(season=iter(seasons, by='row')) %do% {
         # Ensure full year is included even with leap years
         if (season$end_day == 365) {
             if(n_days == 366) {
