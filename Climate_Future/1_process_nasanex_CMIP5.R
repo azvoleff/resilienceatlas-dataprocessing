@@ -54,6 +54,7 @@ stopifnot(sum(seasons[1] < seasons[2]) == nrow(seasons))
 fut_files <- filter(files, scenario %in% fut_scenarios,
                     variable %in% chosen_variables)
 
+# Process both baseline and future files
 in_files <- rbind(base_files, fut_files)
 
 # Function to sum or take mean of layers of CMIP5 hdf5 files in block-by-block 
@@ -94,10 +95,6 @@ aggregate_h5_layers <- function(filename, datasetname, first_layer, last_layer,
 
 ###############################################################################
 ### Testing
-# variable <- 'pr'
-# scenario <- 'historical'
-# model <- 'CNRM-CM5'
-# agg_period <- '1986-2005'
 # base_file <- base_files[1, ]
 # season <- seasons[1, ]
 # Sys.setenv(AWS_CONFIG_FILE='C:/Users/azvoleff/.aws/config')
