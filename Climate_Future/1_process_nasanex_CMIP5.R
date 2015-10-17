@@ -79,7 +79,9 @@ aggregate_h5_layers <- function(filename, datasetname, first_layer, last_layer,
         }
     } else {
         d <- h5read(filename, datasetname, index=list(NULL, NULL, c(first_layer:last_layer)))
-        d_sum  <- apply(d, c(1, 2), sum)
+        # Remove out of range values
+        d[d > 400] <- NA
+        d_sum  <- apply(d, c(1, 2), sum, na.rm=TRUE)
     }
     if (fun == 'mean') {
         out <- d_sum/(last_layer - first_layer + 1) 
@@ -102,10 +104,10 @@ aggregate_h5_layers <- function(filename, datasetname, first_layer, last_layer,
 
 # Loop over models
 timestamp()
-print('Processing baselines...')
+print('Processing daily files...')
 in_files <- in_files[1:80,]
 foreach(in_file=iter(in_files, by='row'),
-        .packages=c('rhdf5', 'foreach', 'dplyr', 'raster', 'rgdal', 
+        .packages=c('rhdf5', 'foreach', 'raster', 'rgdal',
                     'iterators')) %dopar% {
     temp_hdf <- tempfile(fileext='.hdf')
     system2('aws', args=c('s3', 'cp', in_file$url, temp_hdf), stdout=NULL)
@@ -162,7 +164,7 @@ foreach(in_file=iter(in_files, by='row'),
         temp_tif <- tempfile(fileext='.tif')
         writeRaster(out, temp_tif, overwrite=TRUE)
         s3_file <- paste0(file_path_sans_ext(basename(in_file$url)), 
-                          sprintf('_%03i-%03i_', season$start_day, season$end_day),
+                          sprintf('_%03i-%03i_', season$start_day, this_end_day),
                           agg_func, '.tif')
         system2('aws', args=c('s3', 'cp', temp_tif, paste0(s3_out, s3_file)))
         unlink(c(temp_hdf, temp_tif))
