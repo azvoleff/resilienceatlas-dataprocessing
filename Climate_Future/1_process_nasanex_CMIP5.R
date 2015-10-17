@@ -103,10 +103,12 @@ aggregate_h5_layers <- function(filename, datasetname, first_layer, last_layer,
 # Loop over models
 timestamp()
 print('Processing baselines...')
-foreach(in_files=iter(in_files, by='row'),
-        .packages=c('rhdf5', 'foreach', 'dplyr', 'raster', 'rgdal')) %dopar% {
+in_files <- in_files[1:80,]
+foreach(in_file=iter(in_files, by='row'),
+        .packages=c('rhdf5', 'foreach', 'dplyr', 'raster', 'rgdal', 
+                    'iterators')) %dopar% {
     temp_hdf <- tempfile(fileext='.hdf')
-    system2('aws', args=c('s3', 'cp', in_file$url, temp_hdf))
+    system2('aws', args=c('s3', 'cp', in_file$url, temp_hdf), stdout=NULL)
     stopifnot(file_test('-f', temp_hdf))
 
     # Read coordinates and convert so they can be read in properly
@@ -122,7 +124,7 @@ foreach(in_files=iter(in_files, by='row'),
 
     n_days <- as.numeric(h5_meta[match('time', h5_meta$name), ]$dim)
 
-    foreach(season=seasons) %do% {
+    foreach(iter(season=seasons, by='row')) %do% {
         # Ensure full year is included even with leap years
         if (season$end_day == 365) {
             if(n_days == 366) {
