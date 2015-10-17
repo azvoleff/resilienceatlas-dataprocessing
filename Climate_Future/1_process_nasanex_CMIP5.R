@@ -105,7 +105,6 @@ aggregate_h5_layers <- function(filename, datasetname, first_layer, last_layer,
 # Loop over models
 timestamp()
 print('Processing daily files...')
-in_files <- in_files[1:64,]
 foreach(in_file=iter(in_files, by='row'),
         .packages=c('rhdf5', 'foreach', 'raster', 'rgdal',
                     'iterators', 'tools')) %dopar% {
@@ -166,7 +165,7 @@ foreach(in_file=iter(in_files, by='row'),
         s3_file <- paste0(file_path_sans_ext(basename(in_file$url)), 
                           sprintf('_%03i-%03i_', season$start_day, this_end_day),
                           agg_func, '.tif')
-        system2('aws', args=c('s3', 'cp', temp_tif, paste0(s3_out, s3_file)))
+        system2('aws', args=c('s3', 'cp', temp_tif, paste0(s3_out, s3_file)), stdout=NULL)
         unlink(c(temp_hdf, temp_tif))
     }
 }
