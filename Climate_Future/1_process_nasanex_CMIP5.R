@@ -105,10 +105,10 @@ aggregate_h5_layers <- function(filename, datasetname, first_layer, last_layer,
 # Loop over models
 timestamp()
 print('Processing daily files...')
-in_files <- in_files[1:80,]
+in_files <- in_files[1:64,]
 foreach(in_file=iter(in_files, by='row'),
         .packages=c('rhdf5', 'foreach', 'raster', 'rgdal',
-                    'iterators')) %dopar% {
+                    'iterators', 'tools')) %dopar% {
     temp_hdf <- tempfile(fileext='.hdf')
     system2('aws', args=c('s3', 'cp', in_file$url, temp_hdf), stdout=NULL)
     stopifnot(file_test('-f', temp_hdf))
