@@ -1,6 +1,6 @@
 # Function to parse output of S3 ls command
 # Note env is needed on windows to 
-s3_ls <- function(s3_folder, config) {
+s3_ls <- function(s3_folder, config=NULL) {
     require(stringr)
     if (!is.null(config)) {
         # Needed on Windows
