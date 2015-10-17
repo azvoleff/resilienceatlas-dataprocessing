@@ -95,7 +95,7 @@ aggregate_h5_layers <- function(filename, datasetname, first_layer, last_layer,
 
 ###############################################################################
 ### Testing
-# base_file <- base_files[1, ]
+# in_file <- in_files[1, ]
 # season <- seasons[1, ]
 # Sys.setenv(AWS_CONFIG_FILE='C:/Users/azvoleff/.aws/config')
 ###############################################################################
@@ -103,10 +103,10 @@ aggregate_h5_layers <- function(filename, datasetname, first_layer, last_layer,
 # Loop over models
 timestamp()
 print('Processing baselines...')
-foreach(base_file=iter(base_files, by='row'),
+foreach(in_files=iter(in_files, by='row'),
         .packages=c('rhdf5', 'foreach', 'dplyr', 'raster', 'rgdal')) %dopar% {
     temp_hdf <- tempfile(fileext='.hdf')
-    system2('aws', args=c('s3', 'cp', base_file$url, temp_hdf))
+    system2('aws', args=c('s3', 'cp', in_file$url, temp_hdf))
     stopifnot(file_test('-f', temp_hdf))
 
     # Read coordinates and convert so they can be read in properly
@@ -134,16 +134,16 @@ foreach(base_file=iter(base_files, by='row'),
             this_end_day <- season$end_day
         }
 
-        if (base_file$variable == 'pr') {
+        if (in_file$variable == 'pr') {
             agg_func <- 'sum'
-        } else if (base_file$variable %in% c('tasmin', 'tasmax')) {
+        } else if (in_file$variable %in% c('tasmin', 'tasmax')) {
             agg_func <- 'mean'
         } else {
-            stop(paste('unrecognized variable', base_file$variable))
+            stop(paste('unrecognized variable', in_file$variable))
         }
 
         d <- aggregate_h5_layers(temp_hdf,
-                                 paste0('/', base_file$variable), 
+                                 paste0('/', in_file$variable), 
                                  season$start_day, this_end_day,
                                  dims=c(length(lon), length(lat)),
                                  fun=agg_func)
@@ -159,7 +159,7 @@ foreach(base_file=iter(base_files, by='row'),
                       crs='+init=epsg:4326')
         temp_tif <- tempfile(fileext='.tif')
         writeRaster(out, temp_tif, overwrite=TRUE)
-        s3_file <- paste0(file_path_sans_ext(basename(base_file$url)), 
+        s3_file <- paste0(file_path_sans_ext(basename(in_file$url)), 
                           sprintf('_%03i-%03i_', season$start_day, season$end_day),
                           agg_func, '.tif')
         system2('aws', args=c('s3', 'cp', temp_tif, paste0(s3_out, s3_file)))
