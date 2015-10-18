@@ -45,12 +45,13 @@ base_files <- filter(files, scenario == 'historical',
 
 fut_scenarios <- c('rcp45', 'rcp85')
 # For full year, set end_day to 365. Leap years are handled automatically.
-start_days <- c(1)
-end_days <- c(365)
-season_names <- c('annual')
+start_days <- seq(as.Date('2001/1/1'), as.Date('2001/12/1'), by='month')
+end_days <- c(start_days[2:length(start_days)] - 1, as.Date('2001/12/31'))
+start_days <- as.numeric(format(start_days, '%j'))
+end_days <- as.numeric(format(end_days, '%j'))
 seasons <- data.frame(start_day=start_days,
                       end_day=end_days,
-                      name=season_names)
+                      name=month.abb)
 stopifnot(sum(seasons[1] < seasons[2]) == nrow(seasons))
 
 fut_files <- filter(files, scenario %in% fut_scenarios,
@@ -127,18 +128,14 @@ foreach(in_file=iter(in_files, by='row'),
 
     n_days <- as.numeric(h5_meta[match('time', h5_meta$name), ]$dim)
 
-    foreach(season=iter(seasons, by='row')) %do% {
-        # Ensure full year is included even with leap years
-        if (season$end_day == 365) {
-            if(n_days == 366) {
-                this_end_day <- 366
-            } else {
-                this_end_day <- 365
-            }
-        } else {
-            this_end_day <- season$end_day
-        }
+    # Account for leap years
+    season_adj <- seasons
+    if(n_days == 366) {
+        with(season_adj, start_day[start_day > 59] <- start_day[start_day > 59] + 1)
+        with(season_adj, end_day[end_day > 59] <- end_day[end_day > 59] + 1)
+    }
 
+    foreach(season=iter(season_adj, by='row')) %do% {
         if (in_file$variable == 'pr') {
             agg_func <- 'sum'
         } else if (in_file$variable %in% c('tasmin', 'tasmax')) {
@@ -149,7 +146,7 @@ foreach(in_file=iter(in_files, by='row'),
 
         d <- aggregate_h5_layers(temp_hdf,
                                  paste0('/', in_file$variable), 
-                                 season$start_day, this_end_day,
+                                 season$start_day, season$end_day,
                                  dims=c(length(lon), length(lat)),
                                  fun=agg_func)
 
