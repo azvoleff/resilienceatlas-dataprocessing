@@ -37,6 +37,8 @@ writeRasterS3 <- function(r, S3_loc) {
     unlink(temp_file)
 }
 
+# Function to generate a unique temporary directory name separate from the R 
+# session temp folder.
 get_tempdir <- function() {
     rand_str <- function() {
         paste(sample(c(0:9, letters, LETTERS), 10, replace=TRUE), collapse='')
