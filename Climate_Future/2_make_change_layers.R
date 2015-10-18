@@ -55,7 +55,7 @@ get_tempdir <- function() {
 
 ###############################################################################
 ### Testing
-s3_files <- filter(s3_files, season == 'annual')
+# s3_files <- filter(s3_files, season == 'annual')
 # this_variable <- 'pr'
 # this_season <- 'annual'
 # this_model <- 'ACCESS1-0'
