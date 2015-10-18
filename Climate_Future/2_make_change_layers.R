@@ -79,7 +79,7 @@ foreach(this_variable=unique(s3_files$variable)) %:%
         temp_dir <- get_tempdir()
         these_base_files <- filter(base_files, model == this_model)$file
         foreach(this_file=these_base_files) %do% {
-            system2('aws', args=c('s3', 'cp', paste0(s3_in, this_file), temp_dir))
+            system2('aws', args=c('s3', 'cp', paste0(s3_in, this_file), temp_dir), stdout=NULL)
         }
         model_data <- stack(file.path(temp_dir, these_base_files))
         mod_mean <- mean(model_data)
@@ -119,7 +119,7 @@ foreach(this_variable=unique(s3_files$variable)) %:%
             temp_dir <- get_tempdir()
             these_scen_files <- filter(scen_files, model == this_model)$file
             foreach(this_file=these_scen_files) %do% {
-                system2('aws', args=c('s3', 'cp', paste0(s3_in, this_file), temp_dir))
+                system2('aws', args=c('s3', 'cp', paste0(s3_in, this_file), temp_dir), stdout=NULL)
             }
             model_data <- stack(file.path(temp_dir, these_scen_files))
             mod_mean <- mean(model_data)
