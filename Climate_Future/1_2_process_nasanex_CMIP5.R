@@ -159,8 +159,9 @@ foreach(in_file=iter(in_files, by='row'),
         s3_file <- paste0(file_path_sans_ext(basename(in_file$url)), 
                          '_', season$name, '_', agg_func, '.tif')
         system2('aws', args=c('s3', 'cp', temp_tif, paste0(s3_out, s3_file)), stdout=NULL)
-        unlink(c(temp_hdf, temp_tif))
+        unlink(temp_tif)
     }
+    unlink(temp_hdf)
 }
 
 print("Finished processing.")
