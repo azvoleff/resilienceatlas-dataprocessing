@@ -1,6 +1,6 @@
 library(stringr)
 
-get_cluster_hosts <- function() {
+get_cluster_hosts <- function(include_master=TRUE) {
     require(stringr)
     con  <- file('/etc/hosts', open="r")
     cluster_hosts <- c()
@@ -10,5 +10,6 @@ get_cluster_hosts <- function() {
         }
     } 
     close(con)
+    if (!include_master) cluster_hosts <- cluster_hosts[cluster_hosts != 'master']
     return(cluster_hosts)
 }
