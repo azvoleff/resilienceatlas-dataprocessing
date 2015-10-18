@@ -146,14 +146,24 @@ foreach(this_variable=unique(s3_files$variable)) %:%
                                             'multimodelsd.tif', sep='_'))
         system2('aws', args=c('s3', 'cp', temp_file, s3_out_scen_mmsd))
 
-        # Calculate percent difference
         temp_file <- tempfile(fileext='.tif')
-        pct_diff <- overlay(scen_mmm, base_mmm, fun=function(scen, base) {
-                ((scen - base) / base) * 100
+        absdiff <- overlay(scen_mmm, base_mmm, fun=function(scen, base) {
+                scen - base
             }, filename=temp_file)
-        s3_out_pctdiff <- paste0(s3_out, paste(this_variable, this_scenario,
-            'pctdiff', base_agg_period, 'vs', this_agg_period, sep='_'), '.tif')
-        system2('aws', args=c('s3', 'cp', temp_file, s3_out_pctdiff))
+        s3_out_diff <- paste0(s3_out, paste(this_variable, this_scenario,
+            'absdiff', base_agg_period, 'vs', this_agg_period, sep='_'), '.tif')
+        system2('aws', args=c('s3', 'cp', temp_file, s3_out_diff))
+
+        # Also calculate percent difference for precipitation
+        if (this_variable == 'pr') {
+            temp_file <- tempfile(fileext='.tif')
+            pct_diff <- overlay(scen_mmm, base_mmm, fun=function(scen, base) {
+                    ((scen - base) / base) * 100
+                }, filename=temp_file)
+            s3_out_pctdiff <- paste0(s3_out, paste(this_variable, this_scenario,
+                'pctdiff', base_agg_period, 'vs', this_agg_period, sep='_'), '.tif')
+            system2('aws', args=c('s3', 'cp', temp_file, s3_out_pctdiff))
+        }
     }
 }
 print("Finished processing.")
