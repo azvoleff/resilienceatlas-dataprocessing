@@ -15,7 +15,8 @@ s3_out <- 's3://ci-vsdata/CMIP5/seasonal_totals/'
 
 source('../ec2/get_cluster_hosts.R')
 
-cl <- makeCluster(rep(get_cluster_hosts(), each=4))
+# Note that master node is excluded from workers
+cl <- makeCluster(rep(get_cluster_hosts(FALSE), each=4))
 registerDoParallel(cl)
 
 # List available datasets
