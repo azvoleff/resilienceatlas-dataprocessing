@@ -104,14 +104,13 @@ foreach(this_variable=unique(s3_files$variable)) %:%
     agg_periods <- unique(s3_files$agg_period[s3_files$scenario != 'historical'])
     foreach(this_scenario=scenarios) %:% 
         foreach(this_agg_period=agg_periods,
-                .packages=c('raster', 'dplyr', 'foreach')) %dopar% {
+                .packages=c('raster', 'dplyr', 'foreach')) %do% {
 
         scen_files <- filter(s3_files,
                              variable == this_variable,
                              season == this_season,
                              scenario == this_scenario,
                              agg_period == this_agg_period)
-
 
         scen_m <- foreach(this_model=unique(scen_files$model), .combine=stack,
                           .packages=c('raster', 'dplyr')) %dopar% {
