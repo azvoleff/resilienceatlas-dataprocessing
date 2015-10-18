@@ -47,8 +47,10 @@ fut_scenarios <- c('rcp45', 'rcp85')
 # For full year, set end_day to 365. Leap years are handled automatically.
 start_days <- c(1)
 end_days <- c(365)
+season_names <- c('annual')
 seasons <- data.frame(start_day=start_days,
-                      end_day=end_days)
+                      end_day=end_days,
+                      name=season_names)
 stopifnot(sum(seasons[1] < seasons[2]) == nrow(seasons))
 
 fut_files <- filter(files, scenario %in% fut_scenarios,
@@ -163,8 +165,7 @@ foreach(in_file=iter(in_files, by='row'),
         temp_tif <- tempfile(fileext='.tif')
         writeRaster(out, temp_tif, overwrite=TRUE)
         s3_file <- paste0(file_path_sans_ext(basename(in_file$url)), 
-                          sprintf('_%03i-%03i_', season$start_day, this_end_day),
-                          agg_func, '.tif')
+                         '_', season$name, '_', agg_func, '.tif')
         system2('aws', args=c('s3', 'cp', temp_tif, paste0(s3_out, s3_file)), stdout=NULL)
         unlink(c(temp_hdf, temp_tif))
     }
