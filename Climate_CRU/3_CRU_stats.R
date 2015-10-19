@@ -11,6 +11,7 @@ library(dplyr)
 library(foreach)
 library(doParallel)
 library(spatial.tools)
+library(tools)
 
 n_cpus <- 3
 
@@ -34,12 +35,10 @@ num_periods <- 12
 start_date <- as.Date('1985/1/1') # Inclusive
 end_date <- as.Date('2015/1/1') # Exclusive
 
-datasets <- c('tmn', 'tmx', 'tmp', 'pre')
+datasets <- c('tmp', 'tmn', 'tmx', 'pre')
 
-in_folder <- file.path(prefix, "GRP", "CRU")
 out_folder <- file.path(prefix, "GRP", "CRU")
 shp_folder <- file.path(prefix, "GRP", "Boundaries")
-stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
 stopifnot(file_test('-d', shp_folder))
 
@@ -47,70 +46,36 @@ aoi_polygons <- readOGR(shp_folder, 'Region_Hulls')
 
 foreach (dataset=datasets, .inorder=FALSE,
          .packages=c("rgdal", "lubridate", "dplyr", "raster")) %:%
-    foreach (n=1:nrow(aoi_polygons), .inorder=FALSE) %dopar% {
-        aoi <- aoi_polygons[n, ]
-        name <- as.character(aoi$Region_Nam)
-        name <- gsub(' ', '', name)
+    foreach (n=1:nrow(aoi_polygons), .inorder=FALSE) %do% {
 
-        filename_base <- paste0(name, '_', product, '_', dataset, '_')
-        cru_data_file <- file.path(out_folder,
-                              paste0(filename_base, datestring,  '.tif'))
+    aoi <- aoi_polygons[n, ]
+    name <- as.character(aoi$Region_Nam)
+    name <- gsub(' ', '', name)
 
-        # Calculate the band numbers that are needed
-        included_dates <- dates[(dates >= start_date) & (dates < end_date)]
-        band_nums <- c(1:length(dates))[(dates >= start_date) & (dates < end_date)]
+    in_file <- file.path(out_folder,
+                          paste0(name, "_", product, '_', dataset, '_', 
+                                 datestring,  '.tif'))
+    out_base <- file_path_sans_ext(in_file)
 
-        cru_data <- stack(cru_data_file, bands=band_nums)
+    # Calculate the band numbers that are needed
+    included_dates <- dates[(dates >= start_date) & (dates < end_date)]
+    band_nums <- c(1:length(dates))[(dates >= start_date) & (dates < end_date)]
 
+    cru_data <- stack(in_file, bands=band_nums)
 
-
-
-
-
-        if (dataset == "pre") {
-            annual_lm_coefs <- group_by(cru_data_df, year, pixel) %>%
-                summarize(ppt_annual=sum(cru_data, na.rm=TRUE)) %>%
-                group_by(pixel) %>%
-                mutate(annual_data=(ppt_annual/mean(ppt_annual))*100) %>%
-                do(extract_coefs(.))
-        } else {
-            annual_lm_coefs <- group_by(cru_data_df, year, pixel) %>%
-                summarize(annual_data=mean(cru_data, na.rm=TRUE)) %>%
-                group_by(pixel) %>%
-                do(extract_coefs(.))
+    calc_monthly_mean <- function(d, ...) {
+        d[d == -9999] <- NA
+        mthly_mean <- foreach(n=1:12, .combine=c, .final=raster::stack) %do%{
+            # Pull out all arrays for this month and calculate mean
+            raster::mean(d[[seq(from=n, by=12, length.out=round(dim(d)[3]/12))]])
         }
-
-        # Use cru_data raster as a template
-        decadal_slope_rast <- brick(cru_data, values=FALSE, nl=1)
-        # Note *10 to convert to decadal trend
-        decadal_slope_rast <- setValues(decadal_slope_rast,
-                                   matrix(filter(annual_lm_coefs, coef == "year")$estimate * 10, 
-                                          nrow=nrow(cru_data)*ncol(cru_data), 
-                                          ncol=1, byrow=TRUE))
-        decadal_slope_rast <- writeRaster(decadal_slope_rast,
-                    filename=file.path(out_folder, paste0(filename_base, 
-                                                          'decadal_slope.tif')), 
-                    overwrite=TRUE)
-
-        decadal_p_val_rast <- brick(cru_data, values=FALSE, nl=1)
-        decadal_p_val_rast <- setValues(decadal_p_val_rast,
-                                   matrix(filter(annual_lm_coefs, coef == "year")$p_val, 
-                                          nrow=nrow(cru_data)*ncol(cru_data), 
-                                          ncol=1, byrow=TRUE))
-        decadal_p_val_rast <- writeRaster(decadal_p_val_rast,
-                    filename=file.path(out_folder, paste0(filename_base, 
-                                                          'decadal_pval.tif')), 
-                    overwrite=TRUE)
-
-        decadal_slope_rast <- overlay(decadal_slope_rast, decadal_p_val_rast,
-            fun=function(slp, p) {
-                slp[p > .05] <- NA
-                return(slp)
-            },
-            filename=file.path(out_folder, paste0(filename_base, 
-                                                  'decadal_slope_masked.tif')),
-            overwrite=TRUE)
-
+        # Note that tranpose=TRUE is needed as rasterEngine uses cols, rows, 
+        # bands ordering
+        as.array(mthly_mean, transpose=TRUE)
+    }
+    mthly_mean <- rasterEngine(d=cru_data, fun=calc_monthly_mean,
+        datatype='FLT4S', outbands=12, outfiles=1, processing_unit="chunk", 
+        chunk_format="raster", filename=paste0(out_base, '_mean_monthly'),
+        .packages='raster', debugmode=FALSE)
 }
-
 stopCluster(cl)
