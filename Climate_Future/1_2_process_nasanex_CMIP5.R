@@ -58,10 +58,11 @@ in_files <- rbind(base_files, fut_files)
 # Function to sum or take mean of layers of CMIP5 hdf5 files in block-by-block 
 # fashion to reduce memory usage
 aggregate_h5_layers <- function(filename, datasetname, first_layer, last_layer, 
-                                dims, fun='sum', blocksize=100) {
+                                dims, variable, blocksize=100) {
     stopifnot(last_layer >= first_layer)
-    stopifnot(fun %in% c('sum', 'mean'))
-    if (last_layer - first_layer > 20) {
+    stopifnot(variable %in% c('pr', 'tasmax', 'tasmin'))
+    n_layers <- (last_layer - first_layer + 1)
+    if (n_layers > 20) {
         start_rows <- seq(1, dims[1], blocksize)
         end_rows <- c(start_rows[2:length(start_rows)] - 1, dims[1])
         # Sum up in spatial rather than temporal blocks to avoid floating point 
@@ -81,10 +82,21 @@ aggregate_h5_layers <- function(filename, datasetname, first_layer, last_layer,
         d[d > 400] <- NA
         d_sum  <- apply(d, c(1, 2), sum, na.rm=TRUE)
     }
-    if (fun == 'mean') {
-        out <- d_sum/(last_layer - first_layer + 1) 
+    if (variable %in% c('tasmax', 'tasmin') {
+        # Take mean of temperature layers.
+        #
+        # Note that CMIP5 data is in Kelvin, so subtract 273.15 to get it in 
+        # Celsius.
+        out <- d_sum/n_layers - 273.15
     } else {
-        out <- d_sum
+        # Sum the precipitation layers.
+        #
+        # Note that CMIP5 data is in kg/m^2/s. 
+        # This is the same as mm/s, so multiply by 3600 * 24 to get mm/day. 
+        # Note that since precip has been summed it is (prior to conversion 
+        # below) in units of average kg/m^2/n_layers where n_layers is number 
+        # of days. So no need to multiple by number of layers at this stage.
+        out <- d_sum*3600*24
     }
     # NAs got recoded as zeros - recode them back to NA so the rasters will 
     # write correctly
@@ -143,7 +155,7 @@ foreach(in_file=iter(in_files, by='row'),
                                  paste0('/', in_file$variable), 
                                  season$start_day, season$end_day,
                                  dims=c(length(lon), length(lat)),
-                                 fun=agg_func)
+                                 variable=in_file$variable)
 
         # Reorder rows and columns so they are ordered according to lat/long 
         # with ul corner having highest latitude and lowest longitude
