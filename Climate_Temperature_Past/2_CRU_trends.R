@@ -34,7 +34,7 @@ num_periods <- 12
 start_date <- as.Date('1985/1/1') # Inclusive
 end_date <- as.Date('2015/1/1') # Exclusive
 
-datasets <- c('tmn', 'tmx', 'tmp')
+datasets <- c('tmn', 'tmx', 'tmp', 'pre')
 
 in_folder <- file.path(prefix, "GRP", "CRU")
 out_folder <- file.path(prefix, "GRP", "CRU")
