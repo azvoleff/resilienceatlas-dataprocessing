@@ -4,13 +4,15 @@ PLOT_DPI <- 300
 
 prefixes <- c('C:/Data', # HP current work
               'H:/Data', # Buffalo drive
-              'O:/Data') # Blue drive) # vertica1
+              '~/Data', # vertica1
+              'O:/Data') # Blue drive
 prefix <- prefixes[match(TRUE, unlist(lapply(prefixes, function(x) file_test('-d', x))))]
 
 temps <- c('C:/Temp', # Local
            'H:/Temp', # Buffalo drive
            'O:/Temp', # Blue drive (HP or thinkpad)
-           '~/temp') # CI-TEAM
+           '~/temp', # vertica1
+           '~/Temp') # CI-TEAM
 temp <- temps[match(TRUE, unlist(lapply(temps, function(x) file_test('-d', x))))]
 
 library(raster)
