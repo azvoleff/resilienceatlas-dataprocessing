@@ -60,7 +60,7 @@ foreach (datafile=datafiles) %do% {
 
     chirps <- stack(file.path(in_folder, datafile), bands=band_nums)
 
-    # Function to calculate trend)
+    # Function to calculate trend
     calc_decadal_trend <- function(p, dates, included_subyears, ...) {
         p[p == -9999] <- NA
         # Setup period identifiers so the data can be used in a dataframe
