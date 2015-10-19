@@ -17,13 +17,13 @@ n_cpus <- 3
 cl  <- makeCluster(n_cpus)
 registerDoParallel(cl)
 
-product <- 'cru_ts3.22'
-datestring <- '1901.2013'
+product <- 'cru_ts3.23'
+datestring <- '1901.2014'
 
 # Note the below code is INCLUSIVE of the start date
 cru_start_date <- as.Date('1901/1/1')
 # Note the below code is EXCLUSIVE of the end date
-cru_end_date <- as.Date('2014/1/1')
+cru_end_date <- as.Date('2015/1/1')
 
 yrs <- seq(year(cru_start_date), year(cru_end_date))
 dates <- seq(cru_start_date, cru_end_date, by='months')
@@ -31,8 +31,8 @@ dates <- dates[dates < cru_end_date]
 num_periods <- 12
 
 # Choose a start and end year for the data to include in this analysis
-start_date <- as.Date('1984/1/1') # Inclusive
-end_date <- as.Date('2014/1/1') # Exclusive
+start_date <- as.Date('1985/1/1') # Inclusive
+end_date <- as.Date('2015/1/1') # Exclusive
 
 datasets <- c('tmn', 'tmx', 'tmp')
 
@@ -43,14 +43,13 @@ stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
 stopifnot(file_test('-d', shp_folder))
 
-aoi_polygons <- readOGR(shp_folder, 'Analysis_Areas')
-aoi_polygons <- aoi_polygons[aoi_polygons$Name == "Horn of Africa", ]
+aoi_polygons <- readOGR(shp_folder, 'Region_Hulls')
 
 foreach (dataset=datasets, .inorder=FALSE,
          .packages=c("rgdal", "lubridate", "dplyr", "raster")) %:%
     foreach (n=1:nrow(aoi_polygons), .inorder=FALSE) %dopar% {
         aoi <- aoi_polygons[n, ]
-        name <- as.character(aoi$Name)
+        name <- as.character(aoi$Region_Nam)
         name <- gsub(' ', '', name)
 
         filename_base <- paste0(name, '_', product, '_', dataset, '_')
@@ -76,11 +75,11 @@ foreach (dataset=datasets, .inorder=FALSE,
                                   cru_data=as.vector(cru_data))
         cru_data_df <- tbl_df(cru_data_df)
 
-        get_slope <- function(data) {
-            if (all(is.na(data$annual_data))) {
-                d <- data.frame(c("(Intercept)", "year"), NA, NA)
+        extract_coefs <- function(indata) {
+            if (sum(!is.na(indata$annual_data)) < 3) {
+                d <- data.frame(coef=c('(Intercept)', 'year'), c(NA, NA), c(NA, NA))
             } else {
-                model <- lm(annual_data ~ year, data=data)
+                model <- lm(annual_data ~ year, data=indata)
                 d <- data.frame(summary(model)$coefficients[, c(1, 4)])
                 d <- cbind(row.names(d), d)
             }
@@ -88,20 +87,22 @@ foreach (dataset=datasets, .inorder=FALSE,
             row.names(d) <- NULL
             return(d)
         }
-        if (dataset == "pet") {
+
+        if (dataset == "pre") {
             annual_lm_coefs <- group_by(cru_data_df, year, pixel) %>%
-                summarize(annual_data=mean(cru_data, na.rm=TRUE)) %>%
+                summarize(annual_data=sum(cru_data, na.rm=TRUE)) %>%
                 group_by(pixel) %>%
-                do(get_slope(.))
+                do(extract_coefs(.))
         } else {
             annual_lm_coefs <- group_by(cru_data_df, year, pixel) %>%
                 summarize(annual_data=mean(cru_data, na.rm=TRUE)) %>%
                 group_by(pixel) %>%
-                do(get_slope(.))
+                do(extract_coefs(.))
         }
 
         # Use cru_data raster as a template
         decadal_slope_rast <- brick(cru_data, values=FALSE, nl=1)
+        # Note *10 to convert to decadal trend
         decadal_slope_rast <- setValues(decadal_slope_rast,
                                    matrix(filter(annual_lm_coefs, coef == "year")$estimate * 10, 
                                           nrow=nrow(cru_data)*ncol(cru_data), 
