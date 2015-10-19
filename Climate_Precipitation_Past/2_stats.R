@@ -15,7 +15,7 @@ library(spatial.tools)
 library(doParallel)
 library(reshape2)
 
-cl  <- makeCluster(12)
+cl  <- makeCluster(24)
 registerDoParallel(cl)
 
 in_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
@@ -39,7 +39,7 @@ foreach (datafile=datafiles) %:%
 
     timestamp()
     name <- str_extract(datafile, '^[a-zA-Z]*')
-    print(paste0("Processing ", name, "..."))
+    print(paste0("Processing ", name, ", ", mean_monthly_period, "..."))
 
     # Calculate which layers to include, per mean_monthly_period
     file_start_date <- as.Date(paste0(str_extract(datafile, '(?<=_)[0-9]{6}'), '01'), '%Y%m%d')
