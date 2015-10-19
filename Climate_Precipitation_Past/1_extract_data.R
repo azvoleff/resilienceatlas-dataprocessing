@@ -84,13 +84,4 @@ foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
     chirps <- gdalwarp(vrt_file, chirps_tif, s_srs=s_srs, te=te, multi=TRUE, 
                        wo=paste0("NUM_THREADS=", warp_threads), overwrite=TRUE, 
                        output_Raster=TRUE)
-
-    ## Below is not needed with latest TIFs - they appear not to have an NA 
-    ## code
-    # chirps_NA_value <- -9999
-    # chirps_tif_masked <- paste0(base_name, '_NAs_masked.tif')
-    # chirps <- calc(chirps, function(vals) {
-    #         vals[vals == chirps_NA_value] <- NA
-    #         return(vals)
-    #     }, filename=chirps_tif_masked, overwrite=TRUE)
 }
