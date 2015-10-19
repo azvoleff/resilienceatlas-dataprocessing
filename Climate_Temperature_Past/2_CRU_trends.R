@@ -90,8 +90,9 @@ foreach (dataset=datasets, .inorder=FALSE,
 
         if (dataset == "pre") {
             annual_lm_coefs <- group_by(cru_data_df, year, pixel) %>%
-                summarize(annual_data=sum(cru_data, na.rm=TRUE)) %>%
+                summarize(ppt_annual=sum(cru_data, na.rm=TRUE)) %>%
                 group_by(pixel) %>%
+                mutate(annual_data=(ppt_annual/mean(ppt_annual))*100) %>%
                 do(extract_coefs(.))
         } else {
             annual_lm_coefs <- group_by(cru_data_df, year, pixel) %>%
