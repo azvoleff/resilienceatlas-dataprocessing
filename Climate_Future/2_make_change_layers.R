@@ -159,7 +159,8 @@ foreach(this_variable=unique(s3_files$variable)) %:%
                 scen - base
             }, filename=temp_file)
         s3_out_diff <- paste0(s3_out, paste(this_variable, this_scenario,
-            'absdiff', base_agg_period, 'vs', this_agg_period, sep='_'), '.tif')
+            'absdiff', base_agg_period, 'vs', this_agg_period, this_season, 
+            sep='_'), '.tif')
         system2('aws', args=c('s3', 'cp', temp_file, s3_out_diff))
 
         # Also calculate percent difference for precipitation
@@ -169,7 +170,8 @@ foreach(this_variable=unique(s3_files$variable)) %:%
                     ((scen - base) / base) * 100
                 }, filename=temp_file)
             s3_out_pctdiff <- paste0(s3_out, paste(this_variable, this_scenario,
-                'pctdiff', base_agg_period, 'vs', this_agg_period, sep='_'), '.tif')
+                'pctdiff', base_agg_period, 'vs', this_agg_period, 
+                this_season, sep='_'), '.tif')
             system2('aws', args=c('s3', 'cp', temp_file, s3_out_pctdiff))
         }
     }
