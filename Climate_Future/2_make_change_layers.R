@@ -67,6 +67,14 @@ foreach(this_variable=unique(s3_files$variable)) %:%
     foreach(this_season=unique(s3_files$season),
             .packages=c('raster', 'dplyr', 'foreach', 'rgdal')) %dopar% {
 
+    if (this_variable == 'pr') {
+        var_multiplier <- 3600*24
+        var_offset <- 0
+    } else {
+        var_multiplier <- 1
+        var_offset <- -273.15
+    }
+
     these_files <- filter(s3_files, variable == this_variable,
                           season == this_season)
 
@@ -82,7 +90,7 @@ foreach(this_variable=unique(s3_files$variable)) %:%
             system2('aws', args=c('s3', 'cp', paste0(s3_in, this_file), temp_dir), stdout=NULL)
         }
         model_data <- stack(file.path(temp_dir, these_base_files))
-        mod_mean <- mean(model_data)
+        mod_mean <- mean(model_data * var_multiplier + var_offset)
         unlink(temp_dir, recursive=TRUE)
         return(mod_mean)
     }
@@ -122,7 +130,7 @@ foreach(this_variable=unique(s3_files$variable)) %:%
                 system2('aws', args=c('s3', 'cp', paste0(s3_in, this_file), temp_dir), stdout=NULL)
             }
             model_data <- stack(file.path(temp_dir, these_scen_files))
-            mod_mean <- mean(model_data)
+            mod_mean <- mean(model_data * var_multiplier + var_offset)
             unlink(temp_dir, recursive=TRUE)
             return(mod_mean)
         }
