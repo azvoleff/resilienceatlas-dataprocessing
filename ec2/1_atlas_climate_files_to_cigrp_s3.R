@@ -7,7 +7,6 @@ library(foreach)
 source('../0_settings.R')
 
 regions <- c('SouthandSoutheastAsia', 'HornofAfrica', 'Sahel')
-
 s3_folder <- 'H:/Data/GRP/S3_Buckets/cigrp/Climate'
 
 ###############################################################################
@@ -54,7 +53,8 @@ cru_monthlymean_mosaic <- mosaic_rasters(vrtfile,
                                          cru_monthlymean_out,
                                          output_Raster=TRUE)
 
-cru_annualmean_mosaic <- calc(cru_monthlymean_mosaic, fun=mean, filename=paste0(s3_folder, 'cru_ts3.23_19850101-20141201_tmp_annualmean_deg.tif'), overwrite=TRUE)
+cru_annualmean_mosaic <- calc(cru_monthlymean_mosaic, fun=mean, filename=paste0(s3_folder, '/Temperature/Historical/cru_ts3.23_19850101-20141201_tmp_annualmean_deg.tif'), overwrite=TRUE)
+
 
 
 # Trend
