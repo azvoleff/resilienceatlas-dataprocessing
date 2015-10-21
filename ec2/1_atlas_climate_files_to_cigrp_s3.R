@@ -19,25 +19,40 @@ chirps_folder <- file.path(prefix, 'GRP', 'CHIRPS-2.0')
 # Climatology
 chirps_monthlytotal_in <- paste0(regions, '_CHIRPS_monthly_198101-201412_mean_monthly.gri')
 chirps_monthlytotal_in <- file.path(chirps_folder, chirps_monthlytotal_in)
-chirps_monthlytotal_out <- paste0(s3_folder, '/Rainfall/Historical/CHIRPS_19850101-20141201_monthlyppt_total_mm.tif')
 vrtfile <- tempfile(fileext='.vrt')
 gdalbuildvrt(chirps_monthlytotal_in, vrtfile, vrtnodata=-9999)
-chirps_monthlytotal_mosaic <- mosaic_rasters(vrtfile,
-                                             chirps_monthlytotal_out,
+chirps_monthlytotal_mosaic_tmp <- mosaic_rasters(vrtfile,
+                                             tempfile(fileext='.tif'),
                                              output_Raster=TRUE)
+chirps_annualtotal_mosaic_tmp <- calc(chirps_monthlytotal_mosaic_tmp,
+                                      fun=sum, 
+                                      filename=tempfile(fileext='.tif'), 
+                                      overwrite=TRUE)
 
-chirps_annualtotal_mosaic <- calc(chirps_monthlytotal_mosaic, fun=sum, filename=paste0(s3_folder, '/Rainfall/Historical/CHIRPS_19850101-20141201_annualppt_total_mm.tif'), overwrite=TRUE)
+# Now mask areas of zero ppt (these are outside dataset)
+ppt_mask <- chirps_annualtotal_mosaic_tmp == 0
+chirps_monthlytotal_out <- paste0(s3_folder, '/Rainfall/Historical/CHIRPS_19850101-20141201_monthlyppt_total_mm.tif')
+chirps_monthlytotal_mosaic <- mask(chirps_monthlytotal_mosaic_tmp, 
+                                   ppt_mask, filename=chirps_monthlytotal_out, 
+                                   overwrite=TRUE, maskvalue=1)
+chirps_annualtotal_out <- paste0(s3_folder, '/Rainfall/Historical/CHIRPS_19850101-20141201_annualppt_total_mm.tif')
+chirps_annualtotal_mosaic <- mask(chirps_annualtotal_mosaic_tmp, 
+                                  ppt_mask,
+                                  filename=chirps_annualtotal_out, 
+                                  overwrite=TRUE)
 
 # Trend
-# TODO: NAs are not showing properly for this layer
 chirps_trend_in <- paste0(regions, '_CHIRPS_monthly_19850101-20141201_trend_annual.gri')
 chirps_trend_in <- file.path(chirps_folder, chirps_trend_in)
-chirps_trend_out <- paste0(s3_folder, '/Rainfall/Historical/CHIRPS_19850101-20141201_annualppt_trend_pct-per-decade.tif')
 vrtfile <- tempfile(fileext='.vrt')
 gdalbuildvrt(chirps_trend_in, vrtfile, vrtnodata=-9999)
-chirps_trend_mosaic <- mosaic_rasters(vrtfile,
-                                      chirps_trend_out,
-                                      output_Raster=TRUE)
+chirps_trend_mosaic_tmp  <- mosaic_rasters(vrtfile,
+                                           tempfile(fileext='.tif'),
+                                           b=1,
+                                           output_Raster=TRUE)
+chirps_trend_out <- paste0(s3_folder, '/Rainfall/Historical/CHIRPS_19850101-20141201_annualppt_trend_pct-per-decade.tif')
+chirps_trend_mosaic <- mask(chirps_trend_mosaic_tmp, ppt_mask, 
+                            filename=chirps_trend_out, overwrite=TRUE)
 
 #########################
 # Temperature (CRU)
@@ -50,8 +65,10 @@ cru_monthlymean_out <- paste0(s3_folder, '/Temperature/Historical/cru_ts3.23_198
 vrtfile <- tempfile(fileext='.vrt')
 gdalbuildvrt(cru_monthlymean_in, vrtfile, vrtnodata=-9999)
 cru_monthlymean_mosaic <- mosaic_rasters(vrtfile,
-                                         cru_monthlymean_out,
+                                         tempfile(fileext='.tif'),
                                          output_Raster=TRUE)
+# GDAL nodata coding isn't working, so rewrite with writeRaster
+writeRaster(cru_monthlymean_mosaic, cru_monthlymean_out, overwrite=TRUE)
 
 cru_annualmean_mosaic <- calc(cru_monthlymean_mosaic, fun=mean, filename=paste0(s3_folder, '/Temperature/Historical/cru_ts3.23_19850101-20141201_tmp_annualmean_deg.tif'), overwrite=TRUE)
 
@@ -61,9 +78,14 @@ cru_annualmean_mosaic <- calc(cru_monthlymean_mosaic, fun=mean, filename=paste0(
 cru_tmp_trend_in <- paste0(regions, '_cru_ts3.23_tmp_decadal_slope.tif')
 cru_tmp_trend_in <- file.path(cru_folder, cru_tmp_trend_in)
 cru_tmp_trend_out <- paste0(s3_folder, '/Temperature/Historical/cru_ts3.23_19850101-20141201_tmp_trend_deg-per-decade.tif')
-cru_tmp_trend_mosaic <- mosaic_rasters(cru_tmp_trend_in,
-                                       cru_tmp_trend_out,
+vrtfile <- tempfile(fileext='.vrt')
+gdalbuildvrt(cru_tmp_trend_in, vrtfile, vrtnodata=-9999)
+cru_tmp_trend_mosaic <- mosaic_rasters(vrtfile,
+                                       tempfile(fileext='.tif'),
+                                       b=1,
                                        output_Raster=TRUE)
+# GDAL nodata coding isn't working, so rewrite with writeRaster
+writeRaster(cru_tmp_trend_mosaic, cru_tmp_trend_out, overwrite=TRUE)
 
 ###############################################################################
 # Climate projections
