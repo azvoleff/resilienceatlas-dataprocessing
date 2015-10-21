@@ -7,7 +7,7 @@ library(foreach)
 source('../0_settings.R')
 
 regions <- c('SouthandSoutheastAsia', 'HornofAfrica', 'Sahel')
-s3_folder <- 'H:/Data/GRP/S3_Buckets/cigrp/Climate'
+s3_folder <- file.path(prefix, 'GRP/S3_Buckets/cigrp/Climate')
 
 ###############################################################################
 # Historical data (climatology and trends)
