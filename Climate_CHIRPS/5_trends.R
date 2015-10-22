@@ -33,8 +33,6 @@ stopifnot(file_test('-d', out_folder))
 
 datafiles <- dir(in_folder, pattern='_CHIRPS_monthly_198101-201412.tif$')
 
-datafiles <- datafiles[2:3]
-
 foreach (datafile=datafiles) %do% {
     timestamp()
     name <- str_extract(datafile, '^[a-zA-Z]*')
