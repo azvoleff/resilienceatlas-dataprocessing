@@ -56,14 +56,14 @@ chirps_trend_mosaic <- mask(chirps_trend_mosaic_tmp, ppt_mask,
 
 
 # Interannual variability
-chirps_cv_in <- paste0(regions, '_CHIRPS_monthly_19850101-20141201_interannualvariability_pct.tif')
+chirps_cv_in <- paste0(regions, '_CHIRPS_monthly_198501-201412_interannualvariability_pct.tif')
 chirps_cv_in <- file.path(chirps_folder, chirps_cv_in)
 vrtfile <- tempfile(fileext='.vrt')
 gdalbuildvrt(chirps_cv_in, vrtfile, vrtnodata=-9999)
 chirps_cv_mosaic_tmp  <- mosaic_rasters(vrtfile,
                                         tempfile(fileext='.tif'),
                                         output_Raster=TRUE)
-chirps_cv_out <- paste0(s3_folder, '/Rainfall/Historical/CHIRPS_19850101-20141201_interannualvariability_pct.tif')
+chirps_cv_out <- paste0(s3_folder, '/Rainfall/Historical/CHIRPS_monthly_198501-201412_interannualvariability_pct.tif')
 chirps_cv_mosaic <- mask(chirps_cv_mosaic_tmp, ppt_mask, 
                          filename=chirps_cv_out, overwrite=TRUE)
 
