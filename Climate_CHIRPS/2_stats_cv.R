@@ -31,24 +31,25 @@ datafiles <- dir(in_folder, pattern='_CHIRPS_monthly_198101-201412.tif$')
 anom_periods <- c(3, 6, 12)
 
 # What periods should mean info be calculated over?
-mean_monthly_periods <- c('198501-201412', '198501-199912', '200012-201412')
+#comparison_periods <- c('198501-201412', '198501-199912', '200012-201412')
+comparison_periods <- c('198501-201412')
 
 print('Processing mean total monthly precips...')
 foreach (datafile=datafiles) %:% 
-    foreach(mean_monthly_period=mean_monthly_periods) %do% {
+    foreach(comparison_period=comparison_periods) %do% {
 
     timestamp()
     name <- str_extract(datafile, '^[a-zA-Z]*')
-    print(paste0("Processing ", name, ", ", mean_monthly_period, "..."))
+    print(paste0("Processing ", name, ", ", comparison_period, "..."))
 
-    # Calculate which layers to include, per mean_monthly_period
+    # Calculate which layers to include, per comparison_period
     file_start_date <- as.Date(paste0(str_extract(datafile, '(?<=_)[0-9]{6}'), '01'), '%Y%m%d')
     file_end_date <- as.Date(paste0(str_extract(datafile, '(?<=-)[0-9]{6}(?=.)'), '01'), '%Y%m%d')
     file_dates <- seq(file_start_date, file_end_date, by='month')
 
-    period_start <- str_extract(mean_monthly_period, '^[0-9]*(?=-)')
+    period_start <- str_extract(comparison_period, '^[0-9]*(?=-)')
     period_start_date <- as.Date(paste0(period_start, '01'), '%Y%m%d')
-    period_end <- str_extract(mean_monthly_period, '(?<=-)[0-9]*')
+    period_end <- str_extract(comparison_period, '(?<=-)[0-9]*')
     period_end_date <- as.Date(paste0(period_end, '01'), '%Y%m%d')
     period_dates <- seq(period_start_date, period_end_date, by='month')
 
@@ -60,14 +61,23 @@ foreach (datafile=datafiles) %:%
 
     calc_annual_total <- function(p, ...) {
         p[p == -9999] <- NA
-        year_ids <- seq(0:length(dim(p)[3])) %/% 12
-        out <- foreach(year_id=unique(year_ids), .combine=abind) %do%{
-            apply(p[, , which(year_ids == year_id)], c(1, 2), FUN=sum, na.rm=TRUE)
+        # Don't include partial years
+        n_years <- floor(dim(p)[3] / 12)
+        out <- foreach(n=1:n_years, .combine=abind) %do%{
+            start_layer <- 1 + (n - 1) * 12
+            end_layer <- n * 12
+            apply(p[, , start_layer:end_layer], c(1, 2), FUN=sum, na.rm=TRUE)
         }
         array(out, dim=c(dim(p)[1], dim(p)[2], ceiling(dim(p)[3]/12)))
     }
     annual_total <- rasterEngine(p=chirps, fun=calc_annual_total,
-        datatype='FLT4S', outbands=ceiling(nlayers(chirps) / 12),
+        datatype='FLT4S', outbands=floor(nlayers(chirps) / 12),
         outfiles=1, processing_unit="chunk", 
-        filename=paste0(out_basename, '_mean_monthly'), .packages='abind')
+        filename=paste0(out_basename, '_annualtotal'), .packages='abind')
+
+    coef_var <- cv(annual_total)
+
+    writeRaster(coef_var,
+                filename=paste0(out_basename, '_interannualvariability_pct.tif'),
+                overwrite=TRUE)
 }
