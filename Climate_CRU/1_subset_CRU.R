@@ -5,6 +5,7 @@ library(gdalUtils)
 library(rgeos)
 library(teamlucc)
 library(foreach)
+library(lubridate)
 library(doParallel)
 
 cl <- makeCluster(4)
@@ -54,7 +55,7 @@ foreach (dataset=datasets, .inorder=FALSE,
         filename_base <- paste0(name, '_', product, '_', dataset, '_')
 
         dstfile <- file.path(out_folder,
-                              paste0(name, "_", product, '_', dataset, '_', 
+                              paste0(, "_", product, '_', dataset, '_', 
                                      datestring,  '.tif'))
         cropped_data <- crop(this_dataset, aoi, overwrite=TRUE, filename=dstfile)
     }
@@ -62,3 +63,40 @@ foreach (dataset=datasets, .inorder=FALSE,
 }
 
 stopCluster(cl)
+
+################################################################################
+# Also calculate a global stack
+
+# Note the below code is INCLUSIVE of the start date
+cru_start_date <- as.Date('1901/1/1')
+# Note the below code is EXCLUSIVE of the end date
+cru_end_date <- as.Date('2015/1/1')
+# Choose a start and end year for the data to include in this export
+start_date <- as.Date('1981/1/1') # Inclusive
+end_date <- as.Date('2015/1/1') # Exclusive
+
+new_datestring <- paste(format(start_date, '%Y%m%d'), format(end_date-1, '%Y%m%d'), sep='-')
+
+yrs <- seq(year(cru_start_date), year(cru_end_date))
+dates <- seq(cru_start_date, cru_end_date, by='months')
+dates <- dates[dates < cru_end_date]
+
+included_dates <- dates[(dates >= start_date) & (dates < end_date)]
+band_nums <- c(1:length(dates))[(dates >= start_date) & (dates < end_date)]
+
+foreach (dataset=datasets, .inorder=FALSE,
+         .packages=c("teamlucc", "rgeos", "raster", "rgdal")) %dopar% {
+    timestamp()
+    message('Processing ', dataset, '...')
+
+    ncdf <- file.path(in_folder, dataset,
+                      pattern=paste(product, datestring, dataset, 'dat.nc', 
+                                    sep='.'))
+    this_dataset <- stack(ncdf, bands=band_nums)
+    proj4string(this_dataset) <- s_srs
+
+    dstfile <- file.path(out_folder,
+                          paste0("Global", "_", product, '_', dataset, '_', 
+                                 new_datestring,  '.tif'))
+    writeRaster(this_dataset, filename=dstfile, overwrite=TRUE)
+}
