@@ -43,13 +43,13 @@ stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
 stopifnot(file_test('-d', shp_folder))
 
-aoi_polygons <- readOGR(shp_folder, 'Region_Hulls')
+region_polygons <- readOGR(shp_folder, 'Region_Hulls')
 
 foreach (dataset=datasets, .inorder=FALSE,
          .packages=c("rgdal", "lubridate", "dplyr", "raster")) %:%
-    foreach (n=1:nrow(aoi_polygons), .inorder=FALSE) %dopar% {
-        aoi <- aoi_polygons[n, ]
-        name <- as.character(aoi$Region_Nam)
+    foreach (n=1:nrow(region_polygons), .inorder=FALSE) %dopar% {
+        region_polygon <- region_polygons[n, ]
+        name <- as.character(region_polygon$Region_Nam)
         name <- gsub(' ', '', name)
 
         filename_base <- paste0(name, '_', product, '_', dataset, '_')
