@@ -12,6 +12,8 @@ source('../0_settings.R')
 
 source('../ec2/s3_ls.R')
 
+source('../ec2/s3_writeRaster.R')
+
 source('../ec2/get_cluster_hosts.R')
 cl <- makeCluster(rep(get_cluster_hosts(), each=4))
 registerDoParallel(cl)
@@ -31,14 +33,6 @@ s3_files$agg_period <- NA
 s3_files$agg_period[s3_files$year >= 1986 & s3_files$year <= 2005] <- '1986-2005'
 s3_files$agg_period[s3_files$year >= 2040 & s3_files$year <= 2059] <- '2040-2059'
 s3_files$agg_period[s3_files$year >= 2080 & s3_files$year <= 2099] <- '2080-2099'
-
-writeRasterS3 <- function(r, S3_loc) {
-    require(raster)
-    temp_file <- tempfile(fileext='.tif')
-    writeRaster(r, filename=temp_file)
-    system2('aws', args=c('s3', 'cp', temp_file, S3_loc))
-    unlink(temp_file)
-}
 
 # Function to generate a unique temporary directory name separate from the R 
 # session temp folder.
@@ -88,7 +82,7 @@ foreach(this_variable=unique(s3_files$variable)) %:%
     }
     s3_out_base_m <- paste0(s3_out, paste(this_variable, 'historical', 
         base_agg_period, this_season, 'modelmeans.tif', sep='_'))
-    writeRasterS3(base_m, s3_out_base_m)
+    s3_writeRaster(base_m, s3_out_base_m)
 
     # Calculate multimodel mean for baseline (base_mmm)
     s3_out_base_mmm <- paste0(s3_out, paste(this_variable, 'historical', 
@@ -128,7 +122,7 @@ foreach(this_variable=unique(s3_files$variable)) %:%
         }
         s3_out_scen_m <- paste0(s3_out, paste(this_variable, this_scenario, 
             base_agg_period, this_season, 'modelmeans.tif', sep='_'))
-        writeRasterS3(scen_m, s3_out_scen_m)
+        s3_writeRaster(scen_m, s3_out_scen_m)
 
         # Calc scenario multimodel mean
         temp_file <- tempfile(fileext='.tif')
