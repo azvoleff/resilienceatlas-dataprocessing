@@ -27,3 +27,17 @@ if (Sys.info()[4] == 'CI-TEAM') {
 } else {
     n_cpus <- 2
 }
+
+# Function to generate a unique temporary directory name separate from the R 
+# session temp folder.
+get_tempdir <- function() {
+    rand_str <- function() {
+        paste(sample(c(0:9, letters, LETTERS), 10, replace=TRUE), collapse='')
+    }
+    rand_dir <- paste0(tempdir(), '_', rand_str())
+    while(!dir.create(rand_dir, showWarnings=FALSE)) {
+        rand_dir <- paste0(tempdir(), '_', rand_str())
+    }
+    return(rand_dir)
+}
+
