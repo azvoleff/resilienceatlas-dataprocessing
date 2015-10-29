@@ -46,14 +46,14 @@ foreach(region=unique(countries$Region_Name), .inorder=FALSE, .combine=rbind) %d
     these_countries <- aoi_polygons[aoi_polygons$ISO3 %in% countries[countries$Region_Name == region, ]$ISO3, ]
     foreach (n=1:nrow(these_countries), .inorder=FALSE,
              .packages=c('raster', 'stringr', 'dplyr', 'spatial.tools', 
-                         'rgdal', 'lubridate')) %dopar% {
+                         'rgdal', 'lubridate', 'tools')) %dopar% {
         this_country <- these_countries[n, ]
 
         name <- str_extract(chirps_file, '^[a-zA-Z]*')
 
         inc_subyrs_str <- season_key[season_key$ISO3 == this_country$ISO3, ]$RS_1_Months
-        t0 <- as.numeric(str_extract(inc_subyrs_str, '^[0-9]'))
-        tf <- as.numeric(str_extract(inc_subyrs_str, '[0-9]$'))
+        t0 <- as.numeric(str_extract(inc_subyrs_str, '^[0-9]*'))
+        tf <- as.numeric(str_extract(inc_subyrs_str, '[0-9]*$'))
         inc_subyrs <- seq(t0, tf)
         stopifnot((min(inc_subyrs) >= 1) & max(inc_subyrs) <=12)
 

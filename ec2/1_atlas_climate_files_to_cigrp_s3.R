@@ -54,7 +54,6 @@ chirps_trend_out <- paste0(s3_folder, '/Rainfall/Historical/CHIRPS_19850101-2014
 chirps_trend_mosaic <- mask(chirps_trend_mosaic_tmp, ppt_mask, 
                             filename=chirps_trend_out, overwrite=TRUE)
 
-
 # Interannual variability
 chirps_cv_in <- paste0(regions, '_CHIRPS_monthly_198501-201412_interannualvariability_pct.tif')
 chirps_cv_in <- file.path(chirps_folder, chirps_cv_in)
@@ -66,6 +65,29 @@ chirps_cv_mosaic_tmp  <- mosaic_rasters(vrtfile,
 chirps_cv_out <- paste0(s3_folder, '/Rainfall/Historical/CHIRPS_monthly_198501-201412_interannualvariability_pct.tif')
 chirps_cv_mosaic <- mask(chirps_cv_mosaic_tmp, ppt_mask, 
                          filename=chirps_cv_out, overwrite=TRUE)
+
+
+# Seasonal trends
+chirps_seasonal_trend_files <- list.files(chirps_folder, pattern ='_CHIRPS_monthly_19850101-20141201_[A-Z]{3}_trend_decadal_([0-9]-?)+_geotiff.tif', full.names=TRUE)
+
+base <- ppt_mask
+base[] <- NA
+for (chirps_seasonal_trend_file in chirps_seasonal_trend_files) {
+    print(chirps_seasonal_trend_file)
+    r <- raster(chirps_seasonal_trend_file)
+    r <- extend(r, base)
+    # Mask areas of r that are already in base
+    r[!is.na(base)] <- NA
+    # Set areas where r has data that base doesn't to zero in base
+    base[!is.na(r) & is.na(base)] <- 0
+    # Remove NAs from r before addition so that they don't get transferred to 
+    # base
+    r[is.na(r)] <- 0
+    base <- base + r
+}
+writeRaster(base, filename=paste0(s3_folder, 
+                                  '/Rainfall/Historical/CHIRPS_monthly_19850101-20141201_trend_decadal_rainyseason1.tif'), 
+            overwrite=TRUE)
 
 #########################
 # Temperature (CRU)
