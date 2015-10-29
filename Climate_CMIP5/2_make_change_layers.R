@@ -34,19 +34,6 @@ s3_files$agg_period[s3_files$year >= 1986 & s3_files$year <= 2005] <- '1986-2005
 s3_files$agg_period[s3_files$year >= 2040 & s3_files$year <= 2059] <- '2040-2059'
 s3_files$agg_period[s3_files$year >= 2080 & s3_files$year <= 2099] <- '2080-2099'
 
-# Function to generate a unique temporary directory name separate from the R 
-# session temp folder.
-get_tempdir <- function() {
-    rand_str <- function() {
-        paste(sample(c(0:9, letters, LETTERS), 10, replace=TRUE), collapse='')
-    }
-    rand_dir <- paste0(tempdir(), '_', rand_str())
-    while(!dir.create(rand_dir, showWarnings=FALSE)) {
-        rand_dir <- paste0(tempdir(), '_', rand_str())
-    }
-    return(rand_dir)
-}
-
 ###############################################################################
 ### Testing
 # s3_files <- filter(s3_files, season == 'annual')
