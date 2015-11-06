@@ -36,29 +36,20 @@ countries$Region_Name <- gsub(' ', '', countries$Region_Name)
 season_key <- read.csv(file.path(prefix, "GRP", "DataTables", "Rainy_Seasons.csv"), stringsAsFactors=FALSE)
 
 # Function to calculate trend
-calc_decadal_trend <- function(p, dates, inc_subyrs, ...) {
+calc_decadal_trend <- function(p, season_IDs, ...) {
     p[p == -9999] <- NA
     # Setup period identifiers so the data can be used in a dataframe
-    years <- year(dates)
-    years_rep <- rep(years, each=dim(p)[1]*dim(p)[2])
-    subyrs <- rep(seq(min(inc_subyrs), max(inc_subyrs)),
-                  length.out=dim(p)[3])
-    subyrs_rep <- rep(subyrs, each=dim(p)[1]*dim(p)[2])
+    season_IDs_rep <- rep(season_IDs, each=dim(p)[1]*dim(p)[2])
     pixels_rep <- rep(seq(1:(dim(p)[1]*dim(p)[2])), dim(p)[3])
-    p_df <- data.frame(year=years_rep,
-                       subyear=subyrs_rep, 
+    p_df <- data.frame(season_ID=season_IDs_rep,
                        pixel=pixels_rep,
                        ppt=as.vector(p))
-    if (!is.na(inc_subyrs)) {
-        p_df <- dplyr::filter(p_df, subyear %in% inc_subyrs)
-    }
-    # Map areas that are getting signif. wetter or drier, coded by mm per 
-    # year
+    # Map areas that are getting signif. wetter or drier, coded by mm per year
     extract_coefs <- function(indata) {
         if (sum(!is.na(indata$ppt_annual_pctmean)) < 3) {
-            d <- data.frame(coef=c('(Intercept)', 'year'), c(NA, NA), c(NA, NA))
+            d <- data.frame(coef=c('(Intercept)', 'season_ID'), c(NA, NA), c(NA, NA))
         } else {
-            model <- lm(ppt_annual_pctmean ~ year, data=indata)
+            model <- lm(ppt_annual_pctmean ~ season_ID, data=indata)
             d <- data.frame(summary(model)$coefficients[, c(1, 4)])
             d <- cbind(row.names(d), d)
         }
@@ -66,14 +57,14 @@ calc_decadal_trend <- function(p, dates, inc_subyrs, ...) {
         row.names(d) <- NULL
         return(d)
     }
-    lm_coefs <- group_by(p_df, year, pixel) %>%
+    lm_coefs <- group_by(p_df, season_ID, pixel) %>%
         summarize(ppt_annual=sum(ppt, na.rm=TRUE)) %>%
         group_by(pixel) %>%
         mutate(ppt_annual_pctmean=(ppt_annual/mean(ppt_annual))*100) %>%
         do(extract_coefs(.))
-    # Note the *10 below to convert to decadal change
-    out <- array(c(filter(lm_coefs, coef == "year")$estimate * 10,
-                   filter(lm_coefs, coef == "year")$p_val),
+    # The *10 below is to convert to decadal change
+    out <- array(c(filter(lm_coefs, coef == "season_ID")$estimate * 10,
+                   filter(lm_coefs, coef == "season_ID")$p_val),
                  dim=c(dim(p)[1], dim(p)[2], 2))
     # Mask out nodata areas
     out[ , , 1][is.na(p[ , , 1])] <- NA
@@ -93,15 +84,22 @@ seq_month_wrap <- function(t0, tf) {
     }
 }
 
-aoi_polygons <- readShapeSpatial(file.path(shp_folder, 'GRP_Countries.shp'))
-foreach(region=unique(countries$Region_Name), .inorder=FALSE, .combine=rbind) %do% {
+# Function to give position of last match in a series
+last_match <- function(x, y) {
+    return(length(y) - match(x, rev(y)) + 1)
+}
 
+aoi_polygons <- readShapeSpatial(file.path(shp_folder, 'GRP_Countries.shp'))
+
+# Note that seasonal total rainfall is returned for the purposes of sorting the 
+# layers for later display
+seasonal_totals <- foreach(region=unique(countries$Region_Name), .inorder=FALSE, .combine=rbind) %do% {
     chirps_file <- file.path(in_folder,
                              paste0(region, '_CHIRPS_monthly_198101-201412.tif'))
     timestamp()
     print(region)
     these_countries <- aoi_polygons[aoi_polygons$ISO3 %in% countries[countries$Region_Name == region, ]$ISO3, ]
-    foreach (n=1:nrow(these_countries), .inorder=FALSE,
+    seasonal_totals <- foreach (n=1:nrow(these_countries), .inorder=FALSE,
              .packages=c('raster', 'stringr', 'dplyr', 'spatial.tools', 
                          'rgdal', 'lubridate', 'tools')) %dopar% {
         this_country <- these_countries[n, ]
@@ -126,15 +124,28 @@ foreach(region=unique(countries$Region_Name), .inorder=FALSE, .combine=rbind) %d
             seasons <- list(inc_subyrs_1, inc_subyrs_2)
         }
 
-        foreach (season=seasons) %do% {
+        seasonal_totals <- foreach (season=seasons) %do% {
             # Calculate the band numbers that are needed
             dates <- seq(as.Date('1981/1/1'), as.Date('2014/12/1'), by='months')
             band_nums <- c(1:length(dates))[(dates >= start_date) & (dates <= end_date)]
             dates <- dates[band_nums]
             # Extract only band numbers for the included months, so we are not 
             # read/writing extra data
-            band_nums <- band_nums[month(dates) %in% season]
-            dates <- dates[month(dates) %in% season]
+            which_dates <- which(month(dates) %in% season)
+            # Ensure partial seasons aren't included at the ends of the 
+            # timeseries
+            which_dates <- which_dates[which_dates >= match(season[1], month(dates))]
+            which_dates <- which_dates[which_dates <= last_match(season[length(season)], month(dates))]
+            band_nums <- band_nums[which_dates]
+            dates <- dates[which_dates]
+
+            # Check there are the same number of occurrences for each month
+            stopifnot(length(unique(table(month(dates)))) == 1)
+            n_years <- unique(table(month(dates)))
+
+            # Setup a sequence of season identifiers so bands can be tied to a 
+            # particular season
+            season_IDs <- rep(1:n_years, each=length(season))
 
             season_string <- paste0('_', paste(season, collapse='-'))
 
@@ -145,23 +156,41 @@ foreach(region=unique(countries$Region_Name), .inorder=FALSE, .combine=rbind) %d
                 start_date_text, '-', end_date_text, '_', this_country$ISO3)
 
             chirps <- stack(chirps_file, bands=band_nums)
-
             this_chirps <- crop(chirps, this_country)
             this_chirps <- mask(this_chirps, this_country)
 
             decadal_trend <- rasterEngine(p=this_chirps,
-                args=list(dates=dates, season=season),
+                args=list(season_IDs=season_IDs),
                 fun=calc_decadal_trend, datatype='FLT4S', outbands=2, outfiles=1, 
                 processing_unit="chunk",
                 filename=paste0(out_basename, '_trend_decadal', season_string),
                 .packages=c('dplyr', 'lubridate'))
             writeRaster(decadal_trend,
-                        filename=paste0(out_basename, '_trend_decadal', season_string, '_geotiff.tif'),
+                        filename=paste0(out_basename, '_trend_decadal', 
+                                        season_string, '_geotiff.tif'),
                         overwrite=TRUE)
 
             # Calculate total precip within this season
+            seasonal_totals <- foreach(season_ID=unique(season_IDs), 
+                                       .combine=c, .final=raster::stack) %do% {
+                sum(stack(this_chirps, layers=which(season_IDs == season_ID)))
+            }
+            seasonal_total <- mean(seasonal_totals)
+            writeRaster(seasonal_total,
+                        filename=paste0(out_basename, '_meantotalppt_', 
+                                        season_string, '_geotiff.tif'),
+                        overwrite=TRUE)
+            seasonal_total_mean <- cellStats(seasonal_total, 'mean')
+            return(data.frame(ISO3=this_country$ISO3,
+                              season=paste(season, collapse=' '), 
+                              ppt=seasonal_total_mean))
 
+        }
     }
 }
+
+write.csv(seasonal_totals, filename=paste0(in_folder, 
+                                           'seasonal_precipitation_totals.csv'), 
+          row.names=FALSE)
 
 stopCluster(cl)
