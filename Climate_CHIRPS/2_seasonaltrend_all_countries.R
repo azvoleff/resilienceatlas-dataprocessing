@@ -179,7 +179,7 @@ seasonal_totals <- foreach(region=unique(countries$Region_Name),
             }
             seasonal_total <- mean(seasonal_totals)
             writeRaster(seasonal_total,
-                        filename=paste0(out_basename, '_meantotalppt_', 
+                        filename=paste0(out_basename, '_meantotalppt', 
                                         season_string, '_geotiff.tif'),
                         overwrite=TRUE)
             seasonal_total_mean <- cellStats(seasonal_total, 'mean')
