@@ -68,26 +68,37 @@ chirps_cv_mosaic <- mask(chirps_cv_mosaic_tmp, ppt_mask,
 
 
 # Seasonal trends
-chirps_seasonal_trend_files <- list.files(chirps_folder, pattern ='_CHIRPS_monthly_19850101-20141201_[A-Z]{3}_trend_decadal_([0-9]-?)+_geotiff.tif', full.names=TRUE)
+file_key <- read.csv(file.path(chirps_folder, 'seasonal_precipitation_totals.csv'))
+file_key$season <- gsub(' ', '-', file_key$season)
+file_key$filename <- file.path(chirps_folder, 
+                               paste0('CHIRPS_monthly_19850101-20141201_', 
+                                      file_key$ISO3, '_trend_decadal_', 
+                                      file_key$season, '.gri'))
+file_key <- group_by(file_key, ISO3) %>%
+    mutate(season_num=order(ppt, decreasing=TRUE))
 
-base <- ppt_mask
-base[] <- NA
-for (chirps_seasonal_trend_file in chirps_seasonal_trend_files) {
-    print(chirps_seasonal_trend_file)
-    r <- raster(chirps_seasonal_trend_file)
-    r <- extend(r, base)
-    # Mask areas of r that are already in base
-    r[!is.na(base)] <- NA
-    # Set areas where r has data that base doesn't to zero in base
-    base[!is.na(r) & is.na(base)] <- 0
-    # Remove NAs from r before addition so that they don't get transferred to 
-    # base
-    r[is.na(r)] <- 0
-    base <- base + r
+foreach(this_season_num=unique(file_key$season_num)) %do% {
+    base <- ppt_mask
+    base[] <- NA
+    chirps_seasonal_trend_files <- filter(file_key, season_num == this_season_num)$filename
+    foreach (chirps_seasonal_trend_file=chirps_seasonal_trend_files) %do% {
+        print(chirps_seasonal_trend_file)
+        r <- raster(chirps_seasonal_trend_file)
+        r <- extend(r, base)
+        # Mask areas of r that are already in base
+        r[!is.na(base)] <- NA
+        # Set areas where r has data that base doesn't to zero in base
+        base[!is.na(r) & is.na(base)] <- 0
+        # Remove NAs from r before addition so that they don't get transferred to 
+        # base
+        r[is.na(r)] <- 0
+        base <- base + r
+    }
+    writeRaster(base, filename=paste0(s3_folder, 
+                                      '/Rainfall/Historical/CHIRPS_mon_trnd_dec_rainyseas', 
+                                      this_season_num, '.tif'), overwrite=TRUE)
 }
-writeRaster(base, filename=paste0(s3_folder, 
-                                  '/Rainfall/Historical/CHIRPS_monthly_19850101-20141201_trend_decadal_rainyseason1.tif'), 
-            overwrite=TRUE)
+
 
 #########################
 # Temperature (CRU)

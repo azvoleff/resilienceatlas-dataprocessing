@@ -156,6 +156,7 @@ seasonal_totals <- foreach(region=unique(countries$Region_Name),
             out_basename <- paste0(gsub('[0-9-]{6}-[0-9-]{6}', '', 
                                         file_path_sans_ext(chirps_file)),
                 start_date_text, '-', end_date_text, '_', this_country$ISO3)
+            # TODO: Remove region name from basename
 
             chirps <- stack(chirps_file, bands=band_nums)
             this_chirps <- crop(chirps, this_country)
