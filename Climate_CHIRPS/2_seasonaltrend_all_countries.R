@@ -93,7 +93,8 @@ aoi_polygons <- readShapeSpatial(file.path(shp_folder, 'GRP_Countries.shp'))
 
 # Note that seasonal total rainfall is returned for the purposes of sorting the 
 # layers for later display
-seasonal_totals <- foreach(region=unique(countries$Region_Name), .inorder=FALSE, .combine=rbind) %do% {
+seasonal_totals <- foreach(region=unique(countries$Region_Name), 
+                           .inorder=FALSE, .combine=rbind) %do% {
     chirps_file <- file.path(in_folder,
                              paste0(region, '_CHIRPS_monthly_198101-201412.tif'))
     timestamp()
@@ -101,7 +102,8 @@ seasonal_totals <- foreach(region=unique(countries$Region_Name), .inorder=FALSE,
     these_countries <- aoi_polygons[aoi_polygons$ISO3 %in% countries[countries$Region_Name == region, ]$ISO3, ]
     seasonal_totals <- foreach (n=1:nrow(these_countries), .inorder=FALSE,
              .packages=c('raster', 'stringr', 'dplyr', 'spatial.tools', 
-                         'rgdal', 'lubridate', 'tools')) %dopar% {
+                         'rgdal', 'lubridate', 'tools'),
+             .combine=rbind) %dopar% {
         this_country <- these_countries[n, ]
 
         name <- str_extract(basename(chirps_file), '^[a-zA-Z]*')
@@ -120,11 +122,11 @@ seasonal_totals <- foreach(region=unique(countries$Region_Name), .inorder=FALSE,
             t0 <- as.numeric(str_extract(inc_subyrs_str_2, '^[0-9]*'))
             tf <- as.numeric(str_extract(inc_subyrs_str_2, '[0-9]*$'))
             inc_subyrs_2 <- seq_month_wrap(t0, tf)
-            stopifnot((min(inc_subyrs_2) >= 2) & max(inc_subyrs_2) <=22)
+            stopifnot((min(inc_subyrs_2) >= 1) & max(inc_subyrs_2) <=12)
             seasons <- list(inc_subyrs_1, inc_subyrs_2)
         }
 
-        seasonal_totals <- foreach (season=seasons) %do% {
+        seasonal_totals <- foreach (season=seasons, .combine=rbind) %do% {
             # Calculate the band numbers that are needed
             dates <- seq(as.Date('1981/1/1'), as.Date('2014/12/1'), by='months')
             band_nums <- c(1:length(dates))[(dates >= start_date) & (dates <= end_date)]
@@ -189,8 +191,8 @@ seasonal_totals <- foreach(region=unique(countries$Region_Name), .inorder=FALSE,
     }
 }
 
-write.csv(seasonal_totals, filename=paste0(in_folder, 
-                                           'seasonal_precipitation_totals.csv'), 
+write.csv(seasonal_totals,
+          file=paste0(in_folder, 'seasonal_precipitation_totals.csv'), 
           row.names=FALSE)
 
 stopCluster(cl)
