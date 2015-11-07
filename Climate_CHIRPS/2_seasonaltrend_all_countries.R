@@ -192,7 +192,7 @@ seasonal_totals <- foreach(region=unique(countries$Region_Name),
 }
 
 write.csv(seasonal_totals,
-          file=paste0(in_folder, 'seasonal_precipitation_totals.csv'), 
+          file=file.path(in_folder, 'seasonal_precipitation_totals.csv'), 
           row.names=FALSE)
 
 stopCluster(cl)
