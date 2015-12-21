@@ -118,8 +118,6 @@ writeRaster(cru_monthlymean_mosaic, cru_monthlymean_out, overwrite=TRUE)
 
 cru_annualmean_mosaic <- calc(cru_monthlymean_mosaic, fun=mean, filename=paste0(s3_folder, '/Temperature/Historical/cru_ts3.23_19850101-20141201_tmp_annualmean_deg.tif'), overwrite=TRUE)
 
-
-
 # Trend
 cru_tmp_trend_in <- paste0(regions, '_cru_ts3.23_tmp_decadal_slope.tif')
 cru_tmp_trend_in <- file.path(cru_folder, cru_tmp_trend_in)
