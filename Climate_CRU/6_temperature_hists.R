@@ -13,7 +13,7 @@ library(doParallel)
 library(maptools)
 library(spatial.tools)
 
-n_cpus <- 30
+n_cpus <- 3
 
 cl  <- makeCluster(n_cpus)
 registerDoParallel(cl)
@@ -35,25 +35,29 @@ num_periods <- 12
 start_date <- as.Date('1985/1/1') # Inclusive
 end_date <- as.Date('2015/1/1') # Exclusive
 
-datasets <- c('tmp', 'tmn', 'tmx', 'pre')
+#datasets <- c('tmp', 'tmn', 'tmx', 'pre')
+datasets <- c('tmp')
 
 comparison_period <- '1985-2015'
 
+# out_folder <- file.path(prefix, "GRP", "CRU")
+# shp_folder <- file.path(prefix, "GRP", "Boundaries")
+# country_polygons <- readShapeSpatial(file.path(shp_folder, 'GRP_Countries.shp'))
 in_folder <- file.path(prefix, "GRP", "CRU")
-out_folder <- file.path(prefix, "GRP", "CRU")
-shp_folder <- file.path(prefix, "GRP", "Boundaries")
+out_folder <- file.path(prefix, "Vital_Signs", "CRU")
+shp_folder <- file.path(prefix, "Vital_Signs", "Admin_Boundaries")
+country_polygons <- readShapeSpatial(file.path(shp_folder, 'VS_Countries.shp'))
+names(country_polygons)[names(country_polygons) == "ISO"] <- "ISO3"
 stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
 stopifnot(file_test('-d', shp_folder))
-
-country_polygons <- readShapeSpatial(file.path(shp_folder, 'GRP_Countries.shp'))
 
 foreach (dataset=datasets, .inorder=FALSE,
          .packages=c("rgdal", "lubridate", "dplyr", "raster")) %do% {
     timestamp()
     print(paste('Processing', dataset, '...'))
     filename_base <- paste0('Global', '_', product, '_', dataset, '_')
-    cru_data_file <- file.path(out_folder,
+    cru_data_file <- file.path(in_folder,
                           paste0(filename_base, datestring,  '.tif'))
 
     # Calculate the band numbers that are needed
@@ -79,10 +83,9 @@ foreach (dataset=datasets, .inorder=FALSE,
     }
 
     write.csv(hists,
-              file=file.path(in_folder, paste('cru_ts3.23', dataset, comparison_period, 
+              file=file.path(out_folder, paste('cru_ts3.23', dataset, comparison_period, 
                          'monthly.csv', sep='_')),
               row.names=FALSE)
-
 
     return(out)
 }

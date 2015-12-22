@@ -19,13 +19,16 @@ product <- 'cru_ts3.23'
 datestring <- '1901.2014'
 
 in_folder <- file.path(prefix, "CRU", product)
-out_folder <- file.path(prefix, "GRP", "CRU")
-shp_folder <- file.path(prefix, "GRP", "Boundaries")
+# out_folder <- file.path(prefix, "GRP", "CRU")
+# shp_folder <- file.path(prefix, "GRP", "Boundaries")
+out_folder <- file.path(prefix, "Vital_Signs", "CRU")
+shp_folder <- file.path(prefix, "Vital_Signs", "Boundaries")
 stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
 stopifnot(file_test("-d", shp_folder))
 
-datasets <- c('tmp', 'tmn', 'tmx', 'pre')
+#datasets <- c('tmp', 'tmn', 'tmx', 'pre')
+datasets <- c('tmp')
 
 # This is the projection of the CRU files
 s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
@@ -55,7 +58,7 @@ foreach (dataset=datasets, .inorder=FALSE,
         filename_base <- paste0(name, '_', product, '_', dataset, '_')
 
         dstfile <- file.path(out_folder,
-                              paste0(, "_", product, '_', dataset, '_', 
+                              paste0(name, "_", product, '_', dataset, '_', 
                                      datestring,  '.tif'))
         cropped_data <- crop(this_dataset, aoi, overwrite=TRUE, filename=dstfile)
     }

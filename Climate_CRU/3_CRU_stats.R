@@ -35,10 +35,13 @@ num_periods <- 12
 start_date <- as.Date('1985/1/1') # Inclusive
 end_date <- as.Date('2015/1/1') # Exclusive
 
-datasets <- c('tmp', 'tmn', 'tmx', 'pre')
+#datasets <- c('tmp', 'tmn', 'tmx', 'pre')
+datasets <- c('tmp')
 
-out_folder <- file.path(prefix, "GRP", "CRU")
-shp_folder <- file.path(prefix, "GRP", "Boundaries")
+# out_folder <- file.path(prefix, "GRP", "CRU")
+# shp_folder <- file.path(prefix, "GRP", "Boundaries")
+out_folder <- file.path(prefix, "Vital_Signs", "CRU")
+shp_folder <- file.path(prefix, "Vital_Signs", "Boundaries")
 stopifnot(file_test('-d', out_folder))
 stopifnot(file_test('-d', shp_folder))
 
