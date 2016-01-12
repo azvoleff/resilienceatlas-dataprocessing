@@ -86,8 +86,6 @@ foreach (dataset=datasets, .inorder=FALSE,
               file=file.path(out_folder, paste('cru_ts3.23', dataset, comparison_period, 
                          'monthly.csv', sep='_')),
               row.names=FALSE)
-
-    return(out)
 }
 timestamp()
 
