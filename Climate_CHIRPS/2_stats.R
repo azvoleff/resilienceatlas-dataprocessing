@@ -15,13 +15,13 @@ library(spatial.tools)
 library(doParallel)
 library(reshape2)
 
-cl  <- makeCluster(24)
+cl  <- makeCluster(4)
 registerDoParallel(cl)
 
-in_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
-out_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
-# in_folder <- file.path(prefix, "Vital_Signs", "CHIRPS-2.0")
-# out_folder <- file.path(prefix, "Vital_Signs", "CHIRPS-2.0")
+# in_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
+# out_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
+in_folder <- file.path(prefix, "Vital_Signs", "CHIRPS-2.0")
+out_folder <- file.path(prefix, "Vital_Signs", "CHIRPS-2.0")
 stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
 
@@ -31,7 +31,8 @@ datafiles <- dir(in_folder, pattern='_CHIRPS_monthly_198101-201412.tif$')
 anom_periods <- c(3, 6, 12)
 
 # What periods should mean monthly totals be calculated over?
-mean_monthly_periods <- c('198501-201412', '198501-199912', '200012-201412')
+#mean_monthly_periods <- c('198501-201412', '198501-199912', '200012-201412')
+mean_monthly_periods <- c('198501-201412')
 
 print('Processing mean total monthly precips...')
 foreach (datafile=datafiles) %:% 
