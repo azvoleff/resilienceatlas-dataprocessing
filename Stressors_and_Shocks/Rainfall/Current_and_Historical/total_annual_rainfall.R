@@ -14,7 +14,7 @@ ann <- calc(chpclim, function(x) {
             return(x)
         }
     })
-writeRaster(ann, 'total_annual_rainfall.tif', overwrite=TRUE)
+writeRaster(ann, file.path(base_dir, 'total_annual_rainfall.tif'), overwrite=TRUE)
 
 # Drop table on CartoDB
 #https://grp.cidata.io/user/grp/api/v1/sql?q=SELECT+initcap%28s_name%29+as+name,+bbox,+iso3+as+iso+FROM+grpcountries_250k_polygon
