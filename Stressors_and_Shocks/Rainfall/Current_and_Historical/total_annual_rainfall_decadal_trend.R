@@ -6,17 +6,17 @@
 prefix <- "O:/Data"
 
 library(raster)
+library(lubridate)
 library(tools)
 library(foreach)
 library(doParallel)
+library(spatial.tools)
 
 cl  <- makeCluster(4)
 registerDoParallel(cl)
 
-# Over what period should the calculations be made?
-mean_monthly_period <- '198501-201412'
-
 ppt_annual_ts_file <- file.path(prefix, "GRP", "CHIRPS-2.0", "CHIRPS_198501-201412_annualtotal.tif")
+dates <- seq(as.Date('1985/1/1'), as.Date('2014/1/1'), 'year')
 mean_annual_ppt_file <- file.path(prefix, "CHPclim", "total_annual_rainfall.tif")
 out_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
 stopifnot(file_test('-f', ppt_annual_ts_file))
@@ -29,7 +29,7 @@ mean_annual_ppt <- raster(mean_annual_ppt_file)
 
 # Function to calculate trend
 calc_decadal_trend <- function(ppt_annual_ts, mean_annual_ppt, dates, ...) {
-    p[p == -9999] <- NA
+    mean_annual_ppt[mean_annual_ppt == -9999] <- NA
     # Setup period identifiers so the data can be used in a dataframe
     years <- year(dates)
     years_rep <- rep(years, each=dim(p)[1]*dim(p)[2])
@@ -50,9 +50,8 @@ calc_decadal_trend <- function(ppt_annual_ts, mean_annual_ppt, dates, ...) {
         row.names(d) <- NULL
         return(d)
     }
-    lm_coefs <- group_by(pixel) %>%
-        # TODO: below line should divide by CHPclim annual mean, not CHIRPs 
-        # climatology
+    lm_coefs <- group_by(p_df, pixel) %>%
+        # Note below divides by CHPclim annual mean, not CHIRPS climatology
         mutate(ppt_annual_pct_mean_ts=(ppt/mean_annual_ppt)*100) %>%
         do(extract_coefs(.))
     # Note the *10 below to convert to decadal change
@@ -70,10 +69,10 @@ timestamp()
 decadal_trend <- rasterEngine(ppt_annual_ts=ppt_annual_ts, mean_annual_ppt=mean_annual_ppt,
     args=list(dates=dates), fun=calc_decadal_trend, datatype='FLT4S',
     outbands=2, outfiles=1, processing_unit="chunk",
-    filename=paste0(base_name, '_trend_decadal', season_string),
+    filename=paste0(base_name, '_trend_decadal'),
     .packages=c('dplyr', 'lubridate'), overwrite=TRUE)
 writeRaster(decadal_trend,
-            filename=paste0(base_name, '_trend_decadal', season_string, '_geotiff.tif'),
+            filename=paste0(base_name, '_trend_decadal_geotiff.tif'),
             overwrite=TRUE)
 timestamp()
 print('Finished calculating decadal trend in total annual precip timeseries.')
