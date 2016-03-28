@@ -29,20 +29,23 @@ mean_annual_ppt <- raster(mean_annual_ppt_file)
 
 # Function to calculate trend
 calc_decadal_trend <- function(ppt_annual_ts, mean_annual_ppt, dates, ...) {
+    browser()
+    dims <- dim(ppt_annual_ts)
     mean_annual_ppt[mean_annual_ppt == -9999] <- NA
     # Setup period identifiers so the data can be used in a dataframe
     years <- year(dates)
-    years_rep <- rep(years, each=dim(p)[1]*dim(p)[2])
-    pixels_rep <- rep(seq(1:(dim(p)[1]*dim(p)[2])), dim(p)[3])
+    years_rep <- rep(years, each=dims[1]*dims[2])
+    mean_annual_ppt_rep <- rep(mean_annual_ppt, each=dims[3])
+    pixels_rep <- rep(seq(1:(dims[1]*dims[2])), dims[3])
     p_df <- data.frame(year=years_rep,
                        pixel=pixels_rep,
-                       ppt=as.vector(ppt_annual_ts))
+                       ppt_pct_mean=(as.vector(ppt_annual_ts)/mean_annual_ppt_rep)*100)
     # Map areas that are getting signif. wetter or drier, coded by mm per year
     extract_coefs <- function(indata) {
-        if (sum(!is.na(indata$ppt_annual_pct_mean_ts)) < 3) {
+        if (sum(!is.na(indata$ppt_pct_means)) < 3) {
             d <- data.frame(coef=c('(Intercept)', 'year'), c(NA, NA), c(NA, NA))
         } else {
-            model <- lm(ppt_annual_pct_mean_ts ~ year, data=indata)
+            model <- lm(ppt_pct_mean ~ year, data=indata)
             d <- data.frame(summary(model)$coefficients[, c(1, 4)])
             d <- cbind(row.names(d), d)
         }
@@ -52,12 +55,11 @@ calc_decadal_trend <- function(ppt_annual_ts, mean_annual_ppt, dates, ...) {
     }
     lm_coefs <- group_by(p_df, pixel) %>%
         # Note below divides by CHPclim annual mean, not CHIRPS climatology
-        mutate(ppt_annual_pct_mean_ts=(ppt/mean_annual_ppt)*100) %>%
         do(extract_coefs(.))
     # Note the *10 below to convert to decadal change
     out <- array(c(filter(lm_coefs, coef == "year")$estimate * 10,
                    filter(lm_coefs, coef == "year")$p_val),
-                 dim=c(dim(p)[1], dim(p)[2], 2))
+                 dim=c(dims[1], dims[2], 2))
     # Mask out nodata areas
     out[ , , 1][is.na(p[ , , 1])] <- NA
     out[ , , 2][is.na(p[ , , 1])] <- NA
@@ -66,10 +68,10 @@ calc_decadal_trend <- function(ppt_annual_ts, mean_annual_ppt, dates, ...) {
 
 print('Started calculating decadal trend in total annual precip timeseries...')
 timestamp()
-decadal_trend <- rasterEngine(ppt_annual_ts=ppt_annual_ts, mean_annual_ppt=mean_annual_ppt,
-    args=list(dates=dates), fun=calc_decadal_trend, datatype='FLT4S',
-    outbands=2, outfiles=1, processing_unit="chunk",
-    filename=paste0(base_name, '_trend_decadal'),
+decadal_trend <- rasterEngine(ppt_annual_ts=ppt_annual_ts,
+    mean_annual_ppt=mean_annual_ppt, args=list(dates=dates),
+    fun=calc_decadal_trend, datatype='FLT4S', outbands=2, outfiles=1,
+    processing_unit="chunk", filename=paste0(base_name, '_trend_decadal'),
     .packages=c('dplyr', 'lubridate'), overwrite=TRUE)
 writeRaster(decadal_trend,
             filename=paste0(base_name, '_trend_decadal_geotiff.tif'),

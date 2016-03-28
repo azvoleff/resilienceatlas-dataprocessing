@@ -23,5 +23,5 @@ annual_total <- stack(in_file)
 coef_var <- cv(annual_total)
 
 writeRaster(coef_var,
-            filename=paste0(base_name, '_interannualvariability_pct.tif'),
+            filename=file.path(out_folder, 'total_annual_rainfall_variability.tif'),
             overwrite=TRUE)
