@@ -31,12 +31,6 @@ base_name <- file_path_sans_ext(ppt_annual_ts_file)
 ppt_annual_ts <- stack(ppt_annual_ts_file)
 mean_annual_ppt <- raster(mean_annual_ppt_file)
 
-aoi <- readShapeSpatial("H:/Data/Global/GADM/TEST.shp")
-
-ppt_annual_ts <- crop(ppt_annual_ts, aoi)
-mean_annual_ppt <- crop(mean_annual_ppt, aoi)
-ppt_annual_ts <- crop(ppt_annual_ts, aoi)
-
 # Function to calculate precipitation trend, to map areas that are getting 
 # signif.  wetter or drier, coded by mm per decade
 calc_decadal_trend <- function(ppt_annual_ts, mean_annual_ppt, dates, ...) {
