@@ -68,7 +68,9 @@ annual_total <- foreach(n=1:n_years, .combine=raster::stack,
                         .packages='raster') %dopar% {
     start_layer <- 1 + (n - 1) * 12
     end_layer <- n * 12
-    sum(chirps[[start_layer:end_layer]])
+    total <- sum(chirps[[start_layer:end_layer]])
+    total[total < 0] <- -9999
+    total
 }
 annual_total <- writeRaster(annual_total,
                             filename=paste0(base_name, '_annualtotal.tif'), 
