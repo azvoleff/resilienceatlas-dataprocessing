@@ -4,6 +4,7 @@
 ###############################################################################
 
 prefix <- "O:/Data"
+prefix <- "/localdisk/home/azvoleff/Data"
 
 library(raster)
 library(lubridate)
@@ -12,7 +13,7 @@ library(foreach)
 library(doParallel)
 library(spatial.tools)
 
-cl  <- makeCluster(4)
+cl  <- makeCluster(28)
 registerDoParallel(cl)
 
 ppt_annual_ts_file <- file.path(prefix, "GRP", "CHIRPS-2.0", "CHIRPS_198501-201412_annualtotal.tif")
@@ -61,8 +62,8 @@ calc_decadal_trend <- function(ppt_annual_ts, mean_annual_ppt, dates, ...) {
                    filter(lm_coefs, coef == "year")$p_val),
                  dim=c(dims[1], dims[2], 2))
     # Mask out nodata areas
-    out[ , , 1][is.na(p[ , , 1])] <- NA
-    out[ , , 2][is.na(p[ , , 1])] <- NA
+    out[ , , 1][is.na(ppt_annual_ts[ , , 1])] <- NA
+    out[ , , 2][is.na(ppt_annual_ts[ , , 1])] <- NA
     out
 }
 
