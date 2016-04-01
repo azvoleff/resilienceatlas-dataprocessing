@@ -3,11 +3,11 @@
 # of each site.
 ###############################################################################
 
-#prefix <- "H:/Data"
-prefix <- "/localdisk/home/azvoleff/Data"
+prefix <- "H:/Data"
+#prefix <- "/localdisk/home/azvoleff/Data"
 
 library(raster)
-library(maptools)
+library(maptools) # For testing
 library(broom)
 library(dplyr)
 library(lubridate)
@@ -16,7 +16,7 @@ library(foreach)
 library(doParallel)
 library(spatial.tools)
 
-cl  <- makeCluster(28)
+cl  <- makeCluster(4)
 registerDoParallel(cl)
 
 ppt_annual_ts_file <- file.path(prefix, "Resilience_Atlas", "CHIRPS-2.0", "CHIRPS_198501-201412_annualtotal.tif")
@@ -30,6 +30,12 @@ base_name <- file_path_sans_ext(ppt_annual_ts_file)
 
 ppt_annual_ts <- stack(ppt_annual_ts_file)
 mean_annual_ppt <- raster(mean_annual_ppt_file)
+
+### For testing
+# aoi <- readShapeSpatial('H:/Data/Global/GADM/TZA_adm0.shp')
+# ppt_annual_ts <- crop(ppt_annual_ts, aoi)
+# mean_annual_ppt <- crop(mean_annual_ppt, aoi)
+### /For testing
 
 # Function to calculate precipitation trend, to map areas that are getting 
 # signif.  wetter or drier, coded by mm per decade
@@ -63,9 +69,10 @@ calc_decadal_trend <- function(ppt_annual_ts, mean_annual_ppt, dates, ...) {
     out <- array(c(lm_estimates$estimate * 10,
                    lm_estimates$p.value),
                  dim=c(dims[1], dims[2], 2))
-    # Mask out nodata areas
+    # Code nodata areas as -9999
     out[ , , 1][is.na(ppt_annual_ts[ , , 1])] <- -9999
     out[ , , 2][is.na(ppt_annual_ts[ , , 1])] <- -9999
+    out[is.na(out)] <- -9999
     out
 }
 
