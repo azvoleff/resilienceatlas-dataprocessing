@@ -54,8 +54,8 @@ calc_decadal_trend <- function(ppt_annual_ts, mean_annual_ppt, dates, ...) {
                        mean_annual_ppt=as.vector(mean_annual_ppt_rep),
                        ppt_pct_mean=(as.vector(ppt_annual_ts)/mean_annual_ppt_rep)*100)
     model_trend <- function(indata) {
-        if (any(is.na(indata)) | any(is.infinite(unlist(indata))) | 
-            any(is.nan(unlist(indata)))) {
+        if (all(is.na(indata)) | all(is.infinite(unlist(indata))) | 
+            all(is.nan(unlist(indata)))) {
             return(data.frame(estimate=NA, p.value=NA))
         } else {
             model <- lm(ppt_pct_mean ~ year, data=indata)
@@ -82,10 +82,10 @@ timestamp()
 decadal_trend <- rasterEngine(ppt_annual_ts=ppt_annual_ts,
     mean_annual_ppt=mean_annual_ppt, args=list(dates=dates),
     fun=calc_decadal_trend, datatype='FLT4S', outbands=2, outfiles=1,
-    processing_unit="chunk", filename=paste0(base_name, '_trend_decadal_TEST'),
+    processing_unit="chunk", filename=paste0(base_name, '_trend_decadal'),
     .packages=c('dplyr', 'lubridate', 'broom'), overwrite=TRUE)
 writeRaster(decadal_trend,
-            filename=paste0(base_name, '_trend_decadal_TEST_geotiff.tif'),
+            filename=paste0(base_name, '_trend_decadal_geotiff.tif'),
             overwrite=TRUE)
 
 timestamp()
