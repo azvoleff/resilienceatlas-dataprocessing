@@ -81,7 +81,8 @@ foreach (dataset=datasets) %do% {
                                   pixel=pixels_rep,
                                   cru_data=as.vector(cru_data))
         model_trend <- function(indata) {
-            if (any(is.na(indata$year)) | any(is.na(indata$annual_data))) {
+            if (any(is.na(indata)) | any(is.infinite(unlist(indata))) | 
+                any(is.nan(unlist(indata)))) {
                 return(data.frame(estimate=NA, p.value=NA))
             } else {
                 model <- lm(annual_data ~ year, data=indata)
@@ -117,7 +118,8 @@ foreach (dataset=datasets) %do% {
         fun=calc_decadal_trend, datatype='FLT4S', outbands=2, outfiles=1,
         processing_unit="chunk",
         filename=paste0(filename_base, '_trend_decadal_TEST'),
-        .packages=c('dplyr', 'lubridate', 'broom'), overwrite=TRUE)
+        .packages=c('dplyr', 'lubridate', 'broom'),
+        overwrite=TRUE)
     writeRaster(decadal_trend,
                 filename=paste0(filename_base, '_trend_decadal_TEST_geotiff.tif'),
                 overwrite=TRUE)
