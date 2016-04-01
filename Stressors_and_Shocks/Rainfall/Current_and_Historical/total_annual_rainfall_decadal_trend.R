@@ -3,8 +3,8 @@
 # of each site.
 ###############################################################################
 
-prefix <- "H:/Data"
-#prefix <- "/localdisk/home/azvoleff/Data"
+#prefix <- "H:/Data"
+prefix <- "/localdisk/home/azvoleff/Data"
 
 library(raster)
 library(maptools) # For testing
@@ -16,7 +16,7 @@ library(foreach)
 library(doParallel)
 library(spatial.tools)
 
-cl  <- makeCluster(4)
+cl  <- makeCluster(28)
 registerDoParallel(cl)
 
 ppt_annual_ts_file <- file.path(prefix, "Resilience_Atlas", "CHIRPS-2.0", "CHIRPS_198501-201412_annualtotal.tif")
