@@ -81,15 +81,16 @@ foreach (dataset=datasets) %do% {
                                   pixel=pixels_rep,
                                   cru_data=as.vector(cru_data))
         model_trend <- function(indata) {
-            if (any(is.na(indata)) | any(is.infinite(unlist(indata))) | 
-                any(is.nan(unlist(indata)))) {
-                return(data.frame(estimate=NA, p.value=NA))
-            } else {
-                model <- lm(annual_data ~ year, data=indata)
-                return(tidy(model) %>%
-                       filter(term == 'year') %>%
-                       select(estimate, p.value))
-            }
+            tryCatch(
+                {
+                    model <- lm(annual_data ~ year, data=indata)
+                    tidy(model) %>%
+                        filter(term == 'year') %>%
+                        select(estimate, p.value)
+                }, error=function(cond) {
+                    return(data.frame(estimate=NA, p.value=NA))
+                }
+            )
         }
         if (dataset == "pre") {
             lm_estimates <- group_by(cru_data_df, year, pixel) %>%
