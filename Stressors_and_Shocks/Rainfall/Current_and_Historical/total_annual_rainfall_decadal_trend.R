@@ -54,8 +54,8 @@ calc_decadal_trend <- function(ppt_annual_ts, mean_annual_ppt, dates, ...) {
                        mean_annual_ppt=as.vector(mean_annual_ppt_rep),
                        ppt_pct_mean=(as.vector(ppt_annual_ts)/mean_annual_ppt_rep)*100)
     model_trend <- function(indata) {
-        if (all(is.na(indata)) | all(is.infinite(unlist(indata))) | 
-            all(is.nan(unlist(indata)))) {
+        if (all(is.na(indata) | is.infinite(unlist(indata)) | 
+            is.nan(unlist(indata)))) {
             return(data.frame(estimate=NA, p.value=NA))
         } else {
             model <- lm(ppt_pct_mean ~ year, data=indata)
