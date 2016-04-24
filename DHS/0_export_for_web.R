@@ -27,20 +27,11 @@ grep_list <- function(x) {
 ###############################################################################
 ###  Build indicator
 
-grp_list <- read.csv(file.path(prefix, "GRP", "DataTables", "GRP_Countries.csv"))
-# Filter for only countries with DHS data available
-grp_list <- grp_list[grp_list$ISO3 %in% country_list$ISO3_CountryCode, ]
-
-grp_list <- merge(grp_list, country_list, by.x="ISO3", by.y="ISO3_CountryCode")
-
-ccs <- as.character(grp_list$DHS_CountryCode)
-
-get_indic <- function(indicator_IDs, ccs) {
+get_indic <- function(indicator_IDs) {
     # Note DHS uses "NI" for Niger instead of the correct, "NE")
-    cc_string <- paste0("countryIds=", paste(ccs, collapse=","))
     indicators_string <- paste0("indicatorIds=", paste(indicator_IDs, collapse=","))
     api_base <- "http://api.dhsprogram.com/rest/dhs/data?breakdown=subnational&APIkey=CVINTL-877527&perpage=5000"
-    api_call <- paste0(api_base, "&", indicators_string, "&", cc_string, "&f=json")
+    api_call <- paste0(api_base, "&", indicators_string, "&f=json")
     # Make repeated calls to retrieve all records as there is a 5000 record 
     # limit per request
     nrecs <- 5000
@@ -60,85 +51,35 @@ get_indic <- function(indicator_IDs, ccs) {
     d <- tbl_df(d)
 }
 
-buff_indic <- c(214527002, # Children stunted
-                70254002, # Infant mortality rate
-                6136002, # Population age 6 and over who attended secondary education
-                120147001) # Household size)
-#TODO: Make assets index
-buff <- get_indic(buff_indic, ccs)
-buff$Facet <- "Buffer capacity"
-unique(buff$Indicator)
+vars <- c('CN_NUTS_C_HA2', # Children stunted
+          'CM_ECMR_C_IMR', # IMR
+          'FE_FRTR_W_TFR', # Total fertility rate
+          'ED_EDAT_M_CSC', # Males 6 and over with completed secondary ed.
+          'ED_EDAT_W_CSC', # Females 6 and over with completed secondary ed.
+          'ED_LITR_W_LIT', # Women who are literate
+          'ED_LITR_M_LIT', # Men who are literate
+          'ED_MDIA_W_N3M', # Women with no access to mass media
+          'ED_MDIA_M_N3M', # Men with no access to mass media
+          'HC_ELEC_H_ELC', # Households with electricity
+          'HC_HEFF_H_NPH', # Households possessing a telephone
+          'HC_HEFF_H_MPH', # Households possessing a mobile phone
+          'WS_SRCE_H_IMP') # Households with an improved water source
 
-#TODO: Make assets index
-own_indic <-  c('9124001', # Households possessing a radio
-                '9124002', # Households possessing a television
-                '9124003', # Households possessing a telephone
-                '9124004', # Households possessing a refrigerator
-                '9124005', # Households possessing a bicycle
-                '9124006', # Households possessing a motorcycle
-                '9124007', # Households possessing a private car
-                '9124008') # Households possessing none of the previous possessions
-own <- get_indic(own_indic, ccs)
-own$Facet <- "own"
-unique(own$Indicator)
+dhs_vars <- get_indic(vars)
 
-#TODO: Figure out wealth - doesn't appear to be available from the API
-# wealth_indic <- c('10485001', # Women in the lowest wealth quintile
-#                   '10485002', # Women in the second wealth quintile
-#                   '10485003', # Women in the middle wealth quintile
-#                   '10485004', # Women in the fourth wealth quintile
-#                   '10485005', # Women in the highest wealth quintile
-#                   '152485001', # Men in the lowest wealth quintile
-#                   '152485002', # Men in the second wealth quintile
-#                   '152485003', # Men in the middle wealth quintile
-#                   '152485004', # Men in the fourth wealth quintile
-#                   '152485005') # Men in the highest wealth quintile
-# wealth <- get_indic(wealth_indic, ccs)
-# wealth$Facet <- "wealth"
-# unique(wealth$Indicator)
+unique(dhs_vars$Indicator)
 
-tfr_indic <-  c(19170000, # Total fertility rate for 15-49
-                216236002, # Unmet need for contraception
-                20171000) # Total fertility rate
-tfr <- get_indic(tfr_indic, ccs)
-tfr$Facet <- "TFR"
-unique(tfr$Indicator)
+dhs_vars$SurveyYear <- as.numeric(dhs_vars$SurveyYear)
 
-sorg_indic <- c(8139010, # Piped water
-                8142001) # Access to electricity
-sorg <- get_indic(sorg_indic, ccs)
-sorg$Facet <- "Self-organization"
-unique(sorg$Indicator)
-
-learn_indic <- c(127383002, # women who are literate
-                 127384003, # percentage of women who cannot read at all
-                 7135002, # pop 6-15 who are attending school
-                 13126000, # women with no access to mass media
-                 155126001, # men with no access to mass media
-                 13126005) # percentage women with access to newspaper, television, and radio at least once per week
-learn <- get_indic(learn_indic, ccs)
-learn$Facet <- "Capacity for learning"
-unique(learn$Indicator)
-
-indic <- full_join(buff, sorg)
-indic <- full_join(indic, learn)
-indic <- full_join(indic, tfr)
-indic <- full_join(indic, own)
-# indic <- full_join(indic, wealth)
-
-indic$SurveyYear <- as.numeric(indic$SurveyYear)
-
-dim(indic)
-
-vars <- group_by(indic, IndicatorId, ByVariableId) %>%
+vars <- group_by(dhs_vars, IndicatorId, ByVariableId) %>%
     summarise(Indicator=Indicator[1],
               ByVariableLabel=ByVariableLabel[1])
 write.csv(vars, file='DHS_Variables_Key.csv', row.names=FALSE)
 
-names(indic)[names(indic == "Region_ID")] <- indic$REG_ID
+names(dhs_vars)[names(dhs_vars == "RegionId")] <- dhs_vars$REG_ID
 
-save(indic, file=file.path(prefix, "GRP", 
-                           "Resilience_Indicator", "DHS_Export.RData"))
-write.csv(indic, file=file.path(prefix, "GRP", 
-                                "Resilience_Indicator", "DHS_Export.csv"), 
+save(dhs_vars, file=file.path(prefix, "Resilience_Atlas", "DHS", 
+                              "DHS_indicators.RData"))
+write.csv(dhs_vars, file=file.path(prefix, "Resilience_Atlas", 
+                                   "DHS", "DHS_indicators.csv"), 
           row.names=FALSE)
