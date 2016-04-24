@@ -1,7 +1,6 @@
-#prefix <- "H:/Data"
-prefix <- "/localdisk/home/azvoleff/Data"
+prefix <- "O:/Data"
+#prefix <- "/localdisk/home/azvoleff/Data"
 
-library(maptools) # For testing
 library(rgdal)
 library(raster)
 library(lubridate)
@@ -11,7 +10,7 @@ library(foreach)
 library(doParallel)
 library(spatial.tools)
 
-cl  <- makeCluster(28)
+cl  <- makeCluster(4)
 registerDoParallel(cl)
 
 product <- 'cru_ts3.23'
@@ -33,7 +32,7 @@ end_date <- as.Date('2015/1/1') # Exclusive
 new_datestring <- paste(format(start_date, '%Y%m%d'), format(end_date-1, '%Y%m%d'), sep='-')
 
 #datasets <- c('tmn', 'tmx', 'tmp', 'pre')
-datasets <- c('tmp')
+datasets <- c('tmn', 'tmx')
 
 # This is the projection of the CRU files
 s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
@@ -58,11 +57,6 @@ foreach (dataset=datasets) %do% {
                                     sep='.'))
     cru_data <- stack(ncdf, bands=band_nums)
     proj4string(cru_data) <- s_srs
-
-    ### For testing
-    aoi <- readShapeSpatial('H:/Data/Global/GADM/TZA_adm0.shp')
-    cru_data <- crop(cru_data, aoi)
-    ### /For testing
 
     # Function to calculate precipitation trend, to map areas that are getting 
     # signif.  wetter or drier, coded by mm per decade
@@ -118,11 +112,11 @@ foreach (dataset=datasets) %do% {
         args=list(dataset=dataset, dates=included_dates),
         fun=calc_decadal_trend, datatype='FLT4S', outbands=2, outfiles=1,
         processing_unit="chunk",
-        filename=paste0(filename_base, '_trend_decadal_TEST'),
+        filename=paste0(filename_base, '_trend_decadal'),
         .packages=c('dplyr', 'lubridate', 'broom'),
         overwrite=TRUE)
     writeRaster(decadal_trend,
-                filename=paste0(filename_base, '_trend_decadal_TEST_geotiff.tif'),
+                filename=paste0(filename_base, '_trend_decadal_geotiff.tif'),
                 overwrite=TRUE)
     timestamp()
     print(paste('Finished calculating decadal trend in CRU', dataset, 'timeseries.'))
