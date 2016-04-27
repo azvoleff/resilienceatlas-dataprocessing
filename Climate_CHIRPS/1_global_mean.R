@@ -67,6 +67,7 @@ base_name <- file.path(out_folder, paste0('CHIRPS_', dataset, '_',
 vrt_file <- extension(rasterTmpFile(), 'vrt')
 gdalbuildvrt(file.path(in_folder, tifs[which(file_dates %in% period_dates)]), 
              vrt_file, separate=TRUE, overwrite=TRUE)
+
 chirps <- stack(vrt_file)
 
 print('Starting to process mean total monthly precips.')

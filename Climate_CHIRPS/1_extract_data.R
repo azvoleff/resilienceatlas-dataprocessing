@@ -13,19 +13,19 @@ library(rgeos)
 library(teamlucc)
 library(foreach)
 
-warp_threads <- 2
+warp_threads <- 3
 
 #dataset <- 'pentad'
 dataset <- 'monthly'
+
+period_included <- '198501-201412'
 
 in_folder <- file.path(prefix, "CHIRPS-2.0", paste0('global-', dataset))
 # out_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
 # shp_folder <- file.path(prefix, "GRP", "Boundaries")
 out_folder <- file.path(prefix, "Vital_Signs", "CHIRPS-2.0")
-shp_folder <- file.path(prefix, "Vital_Signs", "Boundaries")
 stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
-stopifnot(file_test("-d", shp_folder))
 
 tifs <- dir(in_folder, pattern='.tif$')
 
@@ -41,47 +41,35 @@ tifs <- tifs[order(years, subyears)]
 datestrings <- gsub('[.]', '', datestrings)
 start_date <- datestrings[1]
 end_date <- datestrings[length(datestrings)]
+file_dates <- as.Date(paste0(datestrings, '01'), '%Y%m%d')
+
+period_start <- str_extract(period_included, '^[0-9]*(?=-)')
+period_start_date <- as.Date(paste0(period_start, '01'), '%Y%m%d')
+period_end <- str_extract(period_included, '(?<=-)[0-9]*')
+period_end_date <- as.Date(paste0(period_end, '01'), '%Y%m%d')
+period_dates <- seq(period_start_date, period_end_date, by='month')
+
+base_name <- file.path(out_folder, paste0('CHIRPS_', dataset, '_', 
+                                          period_start, '-', period_end))
+out_tif <- paste0(base_name, '.tif')
 
 # Build a VRT with all dates in a single layer stacked VRT file (this stacks 
 # the tifs, but with delayed computation - the actual cropping and stacking 
 # computations won't take place until the gdalwarp line below that is run for 
 # each aoi)
 vrt_file <- extension(rasterTmpFile(), 'vrt')
-gdalbuildvrt(file.path(in_folder, tifs), vrt_file, separate=TRUE, 
-             overwrite=TRUE)
+gdalbuildvrt(file.path(in_folder, tifs[which(file_dates %in% period_dates)]), 
+             vrt_file, separate=TRUE, overwrite=TRUE)
 
 # This is the projection of the CHIRPS files, read from the .hdr files 
 # accompanying the data
 s_srs <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0'
 
-aoi_polygons <- readOGR(shp_folder, 'Region_Hulls')
+print('Starting')
+timestamp()
 
-foreach (n=1:nrow(aoi_polygons), .inorder=FALSE,
-         .packages=c('raster', 'teamlucc', 'rgeos', 'gdalUtils',
-                     'rgdal')) %do% {
-    timestamp()
-
-    aoi <- aoi_polygons[n, ]
-    name <- as.character(aoi$Region_Nam)
-    name <- gsub(' ', '', name)
-    aoi <- gConvexHull(aoi)
-    aoi <- spTransform(aoi, CRS(utm_zone(aoi, proj4string=TRUE)))
-    aoi <- gBuffer(aoi, width=100000)
-    aoi <- spTransform(aoi, CRS(s_srs))
-    te <- as.numeric(bbox(aoi))
-
-    print(paste0("Processing ", name, "..."))
-
-    # Round extent so that pixels are aligned properly
-    te <- round(te * 20) / 20
-
-    base_name <- file.path(out_folder,
-                           paste0(name, '_CHIRPS_', dataset,
-                                  '_', start_date, '-', end_date))
-
-    chirps_tif <- paste0(base_name, '.tif')
-
-    chirps <- gdalwarp(vrt_file, chirps_tif, s_srs=s_srs, te=te, multi=TRUE, 
-                       wo=paste0("NUM_THREADS=", warp_threads), overwrite=TRUE, 
-                       output_Raster=TRUE)
-}
+chirps <- gdalwarp(vrt_file, out_tif, s_srs=s_srs, multi=TRUE, 
+                   wo=paste0("NUM_THREADS=", warp_threads), overwrite=TRUE, 
+                   output_Raster=TRUE)
+print('Finished')
+timestamp()
