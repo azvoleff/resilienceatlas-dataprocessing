@@ -25,7 +25,6 @@ mean_monthly_period <- '198501-201412'
 # What periods should anomalies be calculated over?
 anom_periods <- c(3, 6, 12)
 
-
 in_folder <- file.path(prefix, "CHIRPS-2.0", paste0('global-', dataset))
 # out_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
 # shp_folder <- file.path(prefix, "GRP", "Boundaries")
