@@ -70,7 +70,7 @@ dhs_vars$Value <- as.numeric(dhs_vars$Value)
 names(dhs_vars)[names(dhs_vars) == "RegionId"] <- 'REG_ID'
 
 # Filter to only include most recent data from each country
-dhs_vars <- group_by(dhs_vars, Indicator, DHS_CountryCode) %>%
+dhs_vars <- group_by(dhs_vars, DHS_CountryCode, Indicator) %>%
     filter(SurveyYear == max(SurveyYear))
 
 # Only include data collected within past 10 years
