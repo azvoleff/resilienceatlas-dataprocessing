@@ -21,7 +21,7 @@ registerDoParallel(cl)
 dataset <- 'monthly'
 
 # Over what period should the calculations be made?
-mean_monthly_period <- '198501-201412'
+mean_monthly_period <- '198501-201606'
 # What periods should anomalies be calculated over?
 anom_periods <- c(3, 6, 12)
 
