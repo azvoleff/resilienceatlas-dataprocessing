@@ -6,9 +6,6 @@ library(tidyr)
 
 #data_base <- 'H:/Data'
 data_base <- 'O:/Data'
-iso3 <- 'TZA'
-res_degrees <- .08333333
-clipsrc <- file.path(data_base, 'Global', 'GADM', 'TZA_adm0.shp')
 
 dhs_api_key <- Sys.getenv('dhs_api_key')
 indicator_list <- fromJSON(paste0('http://api.dhsprogram.com/rest/dhs/indicators?APIkey=',
@@ -61,6 +58,11 @@ vars <- c('CN_NUTS_C_HA2', # percent children stunted
           'ED_MDIA_M_N3M', # access to mass media (men)
           'ED_EDAT_W_CSC', # secondary education (women)
           'ED_EDAT_M_CSC') # secondary education (men)
+
+'WS_SRCE_H_NIM' # Households using an unimproved water source
+
+
+Households using an unprotected well water
 
 dhs_vars <- get_indic(vars)
 
