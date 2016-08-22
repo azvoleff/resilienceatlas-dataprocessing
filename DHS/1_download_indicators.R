@@ -98,6 +98,11 @@ dhs_vars <- dhs_vars[!(dhs_vars$IndicatorId == 'RH_DELP_C_DHF' & dhs_vars$ByVari
 # Only include data collected within past 10 years
 #dhs_vars <- filter(dhs_vars, SurveyYear > 2005)
 
+dhs_key <- group_by(dhs_vars, IndicatorId, Indicator, ByVariableId, 
+                    ByVariableLabel) %>%
+    summarise(n=n())
+write.csv(dhs_vars, 'dhs_indicators_key.csv', na="", row.names=FALSE)
+
 dhs_vars <- select(dhs_vars, DHS_CountryCode, SurveyYear, SurveyId, RegionId, 
                    IndicatorId, Value) %>%
     group_by(DHS_CountryCode, SurveyYear, SurveyId, RegionId) %>%
