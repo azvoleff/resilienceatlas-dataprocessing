@@ -73,7 +73,8 @@ vars <- c('CN_NUTS_C_HA2', # percent children stunted
           'FP_CUSM_W_MOD', # Married women currently using any modern method of contraception
           'RH_DELP_C_DHF', # Place of delivery: Health facility
           'CH_VACS_C_BAS', # Received all vaccinations
-          'WS_WTRT_H_NTR') # Households not treating water
+          'WS_WTRT_H_NTR', # Households not treating water
+          'WS_SRCE_H_PIP') # Households using water piped into dwelling
 
 dhs_vars <- get_indic(vars)
 
@@ -101,7 +102,7 @@ dhs_vars <- dhs_vars[!(dhs_vars$IndicatorId == 'RH_DELP_C_DHF' & dhs_vars$ByVari
 dhs_key <- group_by(dhs_vars, IndicatorId, Indicator, ByVariableId, 
                     ByVariableLabel) %>%
     summarise(n=n())
-write.csv(dhs_vars, 'dhs_indicators_key.csv', na="", row.names=FALSE)
+write.csv(dhs_key, 'dhs_indicators_key.csv', na="", row.names=FALSE)
 
 dhs_vars <- select(dhs_vars, DHS_CountryCode, SurveyYear, SurveyId, RegionId, 
                    IndicatorId, Value) %>%
