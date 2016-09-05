@@ -8,58 +8,70 @@ library(rgdal)
 library(stringr)
 library(raster)
 library(ggplot2)
+library(gdalUtils)
 library(tools)
 library(spatial.tools)
-library(doParallel)
 library(Rcpp)
 
-cl  <- makeCluster(2)
-registerDoParallel(cl)
+#dataset <- 'pentad'
+dataset <- 'monthly'
 
-# in_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
-# out_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
-in_folder <- file.path(prefix, "Vital_Signs", "CHIRPS-2.0")
-out_folder <- file.path(prefix, "Vital_Signs", "CHIRPS-2.0")
+# Over what period should the calculations be made?
+mean_monthly_period <- '198501-201606'
+
+in_folder <- file.path(prefix, "CHIRPS-2.0", paste0('global-', dataset))
+out_folder <- file.path(prefix, "Resilience_Atlas", "CHIRPS-2.0")
 stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
 
-datafiles <- dir(in_folder, pattern='_mean_monthly.grd$')
-datafile <- datafiles[1]
+chpclim_tifs <- dir(file.path(prefix, 'CHPclim'), pattern='^CHPclim\\.[01][0-9]\\.tif$')
 
-foreach (datafile=datafiles) %do% {
-    timestamp()
-    name <- str_extract(datafile, '^[a-zA-Z]*')
-    print(paste0("Processing ", name, "..."))
-    out_basename <- file.path(in_folder, file_path_sans_ext(datafile))
-    
-    mean_mthly <- brick(file.path(in_folder, datafile))
+chp <- stack(file.path(prefix, 'CHPclim', chpclim_tifs))
 
-    wet_seasons <- function(wm, mm, ...) {
-        sourceCpp('4_calc_seasons.cpp')
-        identify_seasons(wm, mm, dim(wm))
-    }
+out_basename <- 'CHPclim_seasons'
 
-    wet_seasons <- rasterEngine(wm=peak_wet_months, mm=mean_mthly,
-        fun=wet_seasons, datatype='INT2S', outbands=12, outfiles=1, 
-        processing_unit="chunk", .packages=c('Rcpp'),
-        filename=paste0(out_basename, '_wetseasons'))
+###############################################################################
+###############################################################################
+### Debugging only
+TZA <- readOGR(file.path(prefix, 'Global/GADM/'), 'TZA_adm0')
+chp <- crop(chp , TZA)
+###############################################################################
+###############################################################################
 
-    # # Filter out hyperarid regions
-    # maxima[annual_total < 25] <- 0
-    # # Filter out maxima where maxima is less than 10% of annual total
-    # maxima[(mm / annual_total) < .10] <- 0
-    # maxima
+timestamp()
 
-mms <- as.array(mean_mthly)
+
+# Try a new approach - minimize the mean variance between clusters, with a 
+# minimum season length of three months
+
+
+wet_seasons <- function(mm, ...) {
+    sourceCpp('4_calc_seasons.cpp')
+    #identify_seasons(wm, mm, dim(wm))
+    identify_seasons(mm, dim(mm))
+}
+
+wet_seasons <- rasterEngine(mm=chp, fun=wet_seasons, datatype='INT2S', 
+                            outbands=12, outfiles=1, processing_unit="chunk", 
+                            .packages=c('Rcpp'),
+                            filename=paste0(out_basename, '_wetseasons'))
+
+# # Filter out hyperarid regions
+# maxima[annual_total < 25] <- 0
+# # Filter out maxima where maxima is less than 10% of annual total
+# maxima[(mm / annual_total) < .10] <- 0
+# maxima
+
+chp <- as.array(chp)
 
 sourceCpp('4_calc_seasons.cpp')
-plot_seasonal(mms[1, 1, ], as.numeric(identify_seasons(mms[1, 1, ], c(1, 1, 12))))
-plot_seasonal(mms[100, 100, ], as.numeric(identify_seasons(mms[100, 100, ], c(1, 1, 12))))
-plot_seasonal(mms[200, 200, ], as.numeric(identify_seasons(mms[200, 200, ], c(1, 1, 12))))
+plot_seasonal(chp[1, 1, ], as.numeric(identify_seasons(chp[1, 1, ], c(1, 1, 12))))
+plot_seasonal(chp[100, 100, ], as.numeric(identify_seasons(chp[100, 100, ], c(1, 1, 12))))
+plot_seasonal(chp[200, 200, ], as.numeric(identify_seasons(chp[200, 200, ], c(1, 1, 12))))
 
-plot_seasonal(mms[1, 1, ], Ckmeans.1d.dp(mms[1, 1, ], c(2,4))$cluster)
-plot_seasonal(mms[100, 100, ], Ckmeans.1d.dp(mms[100, 100, ], c(2,4))$cluster)
-plot_seasonal(mms[200, 200, ], Ckmeans.1d.dp(mms[200, 200, ], c(2,4))$cluster)
+plot_seasonal(chp[1, 1, ], Ckmeans.1d.dp(chp[1, 1, ], c(2,4))$cluster)
+plot_seasonal(chp[100, 100, ], Ckmeans.1d.dp(chp[100, 100, ], c(2,4))$cluster)
+plot_seasonal(chp[200, 200, ], Ckmeans.1d.dp(chp[200, 200, ], c(2,4))$cluster)
 
 wss <- as.array(wet_seasons)
 

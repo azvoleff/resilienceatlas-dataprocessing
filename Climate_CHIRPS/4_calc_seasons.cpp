@@ -25,8 +25,8 @@ cube identify_seasons(Rcpp::NumericVector mms_vec, Rcpp::IntegerVector dims) {
 
             uvec extrema = sort(join_cols(maxima, minima));
 
-            maxima.print();
-            minima.print();
+            // maxima.print();
+            // minima.print();
 
             vec seasons(mm.n_elem);
             // Loop over the middle section of the wrapped mm vector (mm_wrap).  
@@ -70,7 +70,8 @@ cube identify_seasons(Rcpp::NumericVector mms_vec, Rcpp::IntegerVector dims) {
             // Don't allow seasons that are only a month long. If a season is 
             // only a month long, join it with the closest adjoining season 
             // (using same ratio test as above).
-            vec seas_ids = seasons(find_unique(seasons));
+            // vec seas_ids = seasons(find_unique(seasons));
+            // seas_ids.print();
             // for (int i=0; i < seas_ids.n_elem; i++) {
             //     uvec ind = find(seasons == seas_ids);
             //     if (ind.n_elem == 1) {
@@ -80,7 +81,6 @@ cube identify_seasons(Rcpp::NumericVector mms_vec, Rcpp::IntegerVector dims) {
             //
             //     }
             // }
-            
 
             // Setup list of season ids again because seasons may have changed 
             // if any seasons were 1 month long.

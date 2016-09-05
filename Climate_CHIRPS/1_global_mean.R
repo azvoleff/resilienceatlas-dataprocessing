@@ -26,10 +26,7 @@ mean_monthly_period <- '198501-201606'
 anom_periods <- c(3, 6, 12)
 
 in_folder <- file.path(prefix, "CHIRPS-2.0", paste0('global-', dataset))
-# out_folder <- file.path(prefix, "GRP", "CHIRPS-2.0")
-# shp_folder <- file.path(prefix, "GRP", "Boundaries")
-out_folder <- file.path(prefix, "Vital_Signs", "CHIRPS-2.0")
-shp_folder <- file.path(prefix, "Vital_Signs", "Boundaries")
+out_folder <- file.path(prefix, "Resilience_Atlas", "CHIRPS-2.0")
 stopifnot(file_test('-d', in_folder))
 stopifnot(file_test('-d', out_folder))
 stopifnot(file_test("-d", shp_folder))
