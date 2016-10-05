@@ -3,7 +3,7 @@
 ############################# Country admin data can be found at: http://gadm.org/country####################################
 #############################################################################################################################
 ##Notes: Run lines 24-119 for current and 2050 climate models and 24-93 and uncomment 2070 in line 41 for 2070 models
-#####################################################Part 1 & 3##################################################################
+#####################################################Part 1 & 3#################################################################
 ##Download WorldClim data (into WorldClim folder) and unzip to separate into unique folders: CMIPS_30s_2050 & CMIPS_30s_2070
 ##Download the country boundary and place shapefile in unique folder eg for Madagascar: folder = MDG_adm_shp & shp = MDG_adm0
 ##Inputs: climate models and country boundary shapefile
