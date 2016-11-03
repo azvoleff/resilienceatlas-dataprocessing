@@ -12,7 +12,8 @@ temps <- c('C:/Temp', # Local
            'H:/Temp', # Buffalo drive
            'O:/Temp', # Blue drive (HP or thinkpad)
            '~/temp', # vertica1
-           '~/Temp') # CI-TEAM
+           '~/Temp', # CI-TEAM
+           '/tmp')
 temp <- temps[match(TRUE, unlist(lapply(temps, function(x) file_test('-d', x))))]
 
 library(raster)
