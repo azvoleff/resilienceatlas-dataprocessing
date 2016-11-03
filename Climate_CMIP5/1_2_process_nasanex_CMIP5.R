@@ -82,7 +82,7 @@ aggregate_h5_layers <- function(filename, datasetname, first_layer, last_layer,
         d[d > 400] <- NA
         d_sum  <- apply(d, c(1, 2), sum, na.rm=TRUE)
     }
-    if (variable %in% c('tasmax', 'tasmin') {
+    if (variable %in% c('tasmax', 'tasmin')) {
         # Take mean of temperature layers.
         #
         # Note that CMIP5 data is in Kelvin, so subtract 273.15 to get it in 
