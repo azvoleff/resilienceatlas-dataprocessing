@@ -113,7 +113,7 @@ foreach(this_variable=unique(s3_files$variable)) %:%
             return(mod_mean)
         }
         s3_out_scen_m <- paste0(s3_out, paste(this_variable, this_scenario, 
-            base_agg_period, this_season, 'modelmeans.tif', sep='_'))
+            this_agg_period, this_season, 'modelmeans.tif', sep='_'))
         s3_writeRaster(scen_m, s3_out_scen_m)
 
         # Calc scenario multimodel mean
