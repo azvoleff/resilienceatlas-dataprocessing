@@ -112,6 +112,10 @@ aggregate_h5_layers <- function(filename, datasetname, first_layer, last_layer,
 # Sys.setenv(AWS_CONFIG_FILE='C:/Users/azvoleff/.aws/config')
 ###############################################################################
 
+aws_cp <- function(from, to) {
+    system2('aws', args=c('s3', 'cp', from, to, '--region=us-east-1'), stdout=NULL)
+}
+
 # Loop over models
 timestamp()
 print('Processing daily files...')
@@ -119,7 +123,7 @@ foreach(in_file=iter(in_files, by='row'),
         .packages=c('rhdf5', 'foreach', 'raster', 'rgdal',
                     'iterators', 'tools')) %dopar% {
     temp_hdf <- tempfile(fileext='.hdf')
-    system2('aws', args=c('s3', 'cp', in_file$url, temp_hdf), stdout=NULL)
+    aws_cp(in_file$url, temp_hdf)
     stopifnot(file_test('-f', temp_hdf))
 
     # Read coordinates and convert so they can be read in properly
@@ -170,7 +174,7 @@ foreach(in_file=iter(in_files, by='row'),
         writeRaster(out, temp_tif, overwrite=TRUE)
         s3_file <- paste0(file_path_sans_ext(basename(in_file$url)), 
                          '_', season$name, '_', agg_func, '.tif')
-        system2('aws', args=c('s3', 'cp', temp_tif, paste0(s3_out, s3_file)), stdout=NULL)
+        aws_cp(temp_tif, paste0(s3_out, s3_file))
         unlink(temp_tif)
     }
     unlink(temp_hdf)

@@ -21,6 +21,7 @@ registerDoParallel(cl)
 s3_in <- 's3://ci-vsdata/CMIP5/seasonal_totals/'
 s3_out <- 's3://ci-vsdata/CMIP5/results/'
 
+#Sys.setenv(AWS_CONFIG_FILE='C:/Users/azvol/.aws/config')
 s3_files <- s3_ls(s3_in)
 
 s3_files$scenario <- str_extract(s3_files$file, '(historical)|(rcp(45|85))')
@@ -42,6 +43,10 @@ s3_files$agg_period[s3_files$year >= 2080 & s3_files$year <= 2099] <- '2080-2099
 # this_model <- 'ACCESS1-0'
 ###############################################################################
 
+aws_cp <- function(from, to) {
+    system2('aws', args=c('s3', 'cp', from, to, '--region=us-east-1'), stdout=NULL)
+}
+
 print('Processing...')
 timestamp()
 foreach(this_variable=unique(s3_files$variable)) %:%
@@ -60,7 +65,7 @@ foreach(this_variable=unique(s3_files$variable)) %:%
         temp_dir <- get_tempdir()
         these_base_files <- filter(base_files, model == this_model)$file
         foreach(this_file=these_base_files) %do% {
-            system2('aws', args=c('s3', 'cp', paste0(s3_in, this_file), temp_dir), stdout=NULL)
+            aws_cp(paste0(s3_in, this_file), temp_dir)
         }
         model_data <- stack(file.path(temp_dir, these_base_files))
         mod_mean <- mean(model_data)
@@ -76,14 +81,14 @@ foreach(this_variable=unique(s3_files$variable)) %:%
         base_agg_period, this_season, 'multimodelmean.tif', sep='_'))
     temp_file <- tempfile(fileext='.tif')
     base_mmm <- calc(base_m, mean, filename=temp_file)
-    system2('aws', args=c('s3', 'cp', temp_file, s3_out_base_mmm))
+    aws_cp(temp_file, s3_out_base_mmm)
 
     # Calculate multimodel sd for baseline (base_mmsd)
     s3_out_base_mmsd <- paste0(s3_out, paste(this_variable, 'historical', 
         base_agg_period, this_season, 'multimodelsd.tif', sep='_'))
     temp_file <- tempfile(fileext='.tif')
     base_mmsd <- calc(base_m, sd, filename=temp_file)
-    system2('aws', args=c('s3', 'cp', temp_file, s3_out_base_mmsd))
+    aws_cp(temp_file, s3_out_base_mmsd)
 
     # Calculate scenario model means
     scenarios <- unique(these_files$scenario[these_files$scenario != 'historical'])
@@ -100,7 +105,7 @@ foreach(this_variable=unique(s3_files$variable)) %:%
             temp_dir <- get_tempdir()
             these_scen_files <- filter(scen_files, model == this_model)$file
             foreach(this_file=these_scen_files) %do% {
-                system2('aws', args=c('s3', 'cp', paste0(s3_in, this_file), temp_dir), stdout=NULL)
+                aws_cp(paste0(s3_in, this_file), temp_dir)
             }
             model_data <- stack(file.path(temp_dir, these_scen_files))
             mod_mean <- mean(model_data)
@@ -117,7 +122,7 @@ foreach(this_variable=unique(s3_files$variable)) %:%
         s3_out_scen_mmm <- paste0(s3_out, paste(this_variable, this_scenario, 
                                             this_agg_period, this_season, 
                                             'multimodelmean.tif', sep='_'))
-        system2('aws', args=c('s3', 'cp', temp_file, s3_out_scen_mmm))
+        aws_cp(temp_file, s3_out_scen_mmm)
 
         # Calc scenario multimodel sd
         temp_file <- tempfile(fileext='.tif')
@@ -125,7 +130,7 @@ foreach(this_variable=unique(s3_files$variable)) %:%
         s3_out_scen_mmsd <- paste0(s3_out, paste(this_variable, this_scenario, 
                                             this_agg_period, this_season, 
                                             'multimodelsd.tif', sep='_'))
-        system2('aws', args=c('s3', 'cp', temp_file, s3_out_scen_mmsd))
+        aws_cp(temp_file, s3_out_scen_mmsd)
 
         temp_file <- tempfile(fileext='.tif')
         absdiff <- overlay(scen_mmm, base_mmm, fun=function(scen, base) {
@@ -134,7 +139,7 @@ foreach(this_variable=unique(s3_files$variable)) %:%
         s3_out_diff <- paste0(s3_out, paste(this_variable, this_scenario,
             'absdiff', base_agg_period, 'vs', this_agg_period, this_season, 
             sep='_'), '.tif')
-        system2('aws', args=c('s3', 'cp', temp_file, s3_out_diff))
+        aws_cp(temp_file, s3_out_diff)
 
         # Also calculate percent difference for precipitation
         if (this_variable == 'pr') {
@@ -145,7 +150,7 @@ foreach(this_variable=unique(s3_files$variable)) %:%
             s3_out_pctdiff <- paste0(s3_out, paste(this_variable, this_scenario,
                 'pctdiff', base_agg_period, 'vs', this_agg_period, 
                 this_season, sep='_'), '.tif')
-            system2('aws', args=c('s3', 'cp', temp_file, s3_out_pctdiff))
+            aws_cp(temp_file, s3_out_pctdiff)
         }
     }
 }
