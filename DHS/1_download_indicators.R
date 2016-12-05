@@ -25,7 +25,7 @@ grep_list <- function(x) {
 
 get_indic <- function(indicatorIDs) {
     registerDoParallel(4)
-    api_base <- "http://api.dhsprogram.com/rest/dhs/data?breakdown=subnational&APIkey=CVINTL-877527&perpage=5000"
+    api_base <- "http://api.dhsprogram.com/rest/dhs/data?breakdown=subnational&APIkey=CVINTL-877527&perpage=5000&countryIdType=ISO3"
     r <- foreach(indicatorID=indicatorIDs, .combine=rbind, .inorder=FALSE,
                  .packages='RJSONIO') %dopar% {
         api_call <- paste(api_base,
@@ -86,27 +86,24 @@ dhs_vars$Value <- as.numeric(dhs_vars$Value)
 # to 14001). Use last five years.
 dhs_vars <- dhs_vars[!(dhs_vars$IndicatorId == 'RH_DELP_C_DHF' & dhs_vars$ByVariableId == 14000), ]
 
-# NOTE: Below lines are commented out because for some countries (Indonesia, 
-# for example), we don't yet have region boundaries for the most recent survey.  
-# So we load all the data into CartoDB, then join with a regions file that has 
-# regions only for the most recent available survey from each country - this 
-# will filter to the most recent data, and we can do a filter there to only 
-# include data from the past 10 years.
-#
-# Filter to only include most recent data from each country
-#dhs_vars <- group_by(dhs_vars, DHS_CountryCode, IndicatorId) %>%
-#    filter(SurveyYear == max(SurveyYear))
-# Only include data collected within past 10 years
-#dhs_vars <- filter(dhs_vars, SurveyYear > 2005)
+# Get a list of the DHS countries and their associated country codes so that 
+# the DHS country codes returned by the API can be converted to ISO3
+countries <- fromJSON('http://api.dhsprogram.com/rest/dhs/countries')
+countries <- lapply(countries$Data, function(x) {unlist(x)})
+# Convert JSON input to a data frame
+countries <- as.data.frame(do.call("rbind", countries), stringsAsFactors=FALSE)
+write.csv(countries, 'dhs_countries_key.csv', na="", row.names=FALSE)
+
+dhs_vars$ISO <- countries$ISO3_CountryCode[match(dhs_vars$DHS_CountryCode, countries$DHS_CountryCode)]
 
 dhs_key <- group_by(dhs_vars, IndicatorId, Indicator, ByVariableId, 
                     ByVariableLabel) %>%
     summarise(n=n())
 write.csv(dhs_key, 'dhs_indicators_key.csv', na="", row.names=FALSE)
 
-dhs_vars <- select(dhs_vars, DHS_CountryCode, SurveyYear, SurveyId, RegionId, 
+dhs_vars <- select(dhs_vars, ISO, SurveyYear, SurveyId, RegionId, 
                    IndicatorId, Value) %>%
-    group_by(DHS_CountryCode, SurveyYear, SurveyId, RegionId) %>%
+    group_by(ISO, SurveyYear, SurveyId, RegionId) %>%
     spread(IndicatorId, Value)
 
 # Use blanks for NAs so CartoDB will correctly format numeric columns as 
