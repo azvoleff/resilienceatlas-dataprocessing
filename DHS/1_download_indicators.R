@@ -23,6 +23,28 @@ grep_list <- function(x) {
     return(indicator_list[(def_rows | label_rows), 1:3])
 }
 
+get_geometries <- function() {
+    api_call <- "https://api.dhsprogram.com/rest/dhs/geometry?f=json&APIkey=CVINTL-877527&perpage=1000"
+    # Make repeated calls to retrieve all records as there is a 1000 record 
+    # limit per request
+    nrecs <- 1000
+    i <- 1
+    while (nrecs == 1000) {
+        this_call <- paste0(api_call, '&page=', i)
+        json_file <- fromJSON(this_call)
+        # Unlist the JSON file entries
+        this_d <- lapply(json_file$Data, function(x) {unlist(x)})
+        # Convert JSON input to a data frame
+        this_d <- as.data.frame(do.call("rbind", this_d), stringsAsFactors=FALSE)
+        if (i == 1) d <- this_d
+        else d <- rbind(d, this_d)
+        nrecs <- nrow(this_d)
+        print(nrecs)
+        i <-  i + 1
+    }
+    tbl_df(d)
+}
+
 get_indic <- function(indicatorIDs) {
     registerDoParallel(4)
     api_base <- "http://api.dhsprogram.com/rest/dhs/data?breakdown=subnational&APIkey=CVINTL-877527&perpage=5000&countryIdType=ISO3"
@@ -110,16 +132,23 @@ dhs_vars <- select(dhs_vars, ISO, SurveyYear, SurveyId, RegionId,
 # numeric and not as text
 write.csv(dhs_vars, 'dhs_indicators.csv', na="", row.names=FALSE)
 
-# # Join polygons
-# dhs_regions <- readOGR(file.path(data_base, 'DHS', 'DHS_Regions'), 'DHS_Regions')
-#
-# dim(dhs_regions)
-# dhs_regions <- dhs_regions[dhs_regions$REG_ID %in% dhs_vars$REG_ID, ]
-# dim(dhs_regions)
-#
-# dhs_vars <- spread(select(dhs_vars, Indicator, Value, REG_ID), Indicator, Value)
-#
-# dhs_regions@data <- left_join(dhs_regions@data, dhs_vars)
-#
-# writeOGR(dhs_regions, 'DHS_indicators.geojson', 
-#          'DHS_indicators', driver='GeoJSON')
+
+# Download polygons and save as a geojson - this can take some time
+geoms <- get_geometries()
+geoms$SurveyYear <- as.numeric(geoms$SurveyYear)
+
+# filter out regions with bad geometries
+geoms_filtered <- geoms
+for (n in 1:nrow(geoms)) {
+    geoms_filtered$Coordinates[n] <- tryCatch({
+        st_as_text(st_as_sfc(geoms$Coordinates[n]))
+    }, error = function(e) {
+        ""
+    })
+}
+geoms_clean <- geoms_filtered[geoms_filtered$Coordinates != '', ]
+geoms_clean$Coordinates <- st_as_sfc(geoms_clean$Coordinates)
+
+geoms_clean <- st_sf(geoms_clean)
+
+st_write(geoms_clean, 'dhs_regions.geojson', driver='GeoJSON')
